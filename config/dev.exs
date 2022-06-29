@@ -25,7 +25,8 @@ config :clubhouse, ClubhouseWeb.Endpoint,
   secret_key_base: "AOaJjOrcoQ8dPAkxa3cP/e6GbK0dU8S/i3SCasLEqHP1Y7UiTmSlVHXe2rQSwQ7m",
   watchers: [
     # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
 
 # ## SSL Support
