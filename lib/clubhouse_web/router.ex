@@ -18,6 +18,12 @@ defmodule ClubhouseWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
+    get "/about", InfoController, :about
+    get "/frequently-asked-questions", InfoController, :frequently_asked_questions
+    get "/code-of-conduct", InfoController, :code_of_conduct
+    get "/privacy", InfoController, :privacy_policy
+    get "/terms-of-service", InfoController, :terms_of_service
   end
 
   # Other scopes may use custom stacks.

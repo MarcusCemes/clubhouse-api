@@ -62,3 +62,13 @@ config :tailwind,
   ),
     cd: Path.expand("../assets", __DIR__)
   ]
+
+# Markdown
+config :phoenix, :template_engines, md: PhoenixMarkdown.Engine
+config :phoenix_markdown, :server_tags, :all
+
+# Hero icons
+config :ex_heroicons, type: "outline"
+
+# Service configuration
+config :clubhouse, :services, forum_url: "https://forum.clubhouse.test"

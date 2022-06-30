@@ -1,4 +1,4 @@
-<div class="grid min-h-screen grid-flow-row grid-rows-[1fr_auto_1fr] bg-stone-50 px-4">
+<div class="px-4 grid min-h-screen grid-flow-row grid-rows-[1fr_auto_1fr]">
   <div class="flex justify-center">
     <div class="flex h-32 w-full max-w-3xl items-center justify-center md:justify-end"></div>
   </div>
@@ -15,7 +15,7 @@
 
     <div class="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-2 text-stone-400">
       <%= for {text, link} <- links() do %>
-        <a class="hover:text-stone-600" href={link}><%= text %></a>
+        <a class="hover:text-stone-600" href={Routes.info_path(@conn, link)}><%= text %></a>
         <span class="last:hidden">&bull;</span>
       <% end %>
     </div>
@@ -25,7 +25,7 @@
         class="inline-flex items-center rounded-full bg-orange-600 px-6 py-3 font-bold text-white transition-colors duration-75 hover:bg-orange-500"
         href={forum_url()}
       >
-        Forum
+        <Heroicons.LiveView.icon name="chat" class="mr-1 w-5 h-5" /> Forum
       </a>
     </div>
   </div>
