@@ -49,6 +49,7 @@ defmodule Clubhouse.MixProject do
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
+      {:nanoid, "~> 2.0"},
       {:earmark, "~> 1.4"},
       {:phoenix_markdown, "~> 1.0"},
       {:tailwind, "~> 0.1", runtime: Mix.env() == :dev},
