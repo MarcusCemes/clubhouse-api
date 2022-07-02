@@ -4,7 +4,7 @@ import Config
 config :clubhouse, Clubhouse.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "postgres",
+  hostname: System.get_env("DATABASE_HOST", "localhost"),
   database: "clubhouse_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
