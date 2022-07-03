@@ -63,6 +63,17 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  bridge_api_key =
+    System.get_env("BRIDGE_API_KEY") ||
+      raise """
+      environment variable BRIDGE_API_KEY is missing.
+      """
+
+  # Configure the bridge
+  config :clubhouse, :bridge,
+    url: System.get_env("BRIDGE_URL", "http://bridge"),
+    api_key: bridge_api_key
+
   # ## Configuring the mailer
   #
   # In production you need to configure the mailer to use a different adapter.
