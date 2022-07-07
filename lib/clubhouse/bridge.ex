@@ -38,9 +38,7 @@ defmodule Clubhouse.Bridge do
   end
 
   def mocked_bridge?() do
-    case Application.fetch_env(:clubhouse, :bridge) do
-      {:ok, config} -> Keyword.get(config, :mock) == true
-      _ -> false
-    end
+    Application.fetch_env!(:clubhouse, :services)
+    |> Keyword.get(:mock_bridge) == true
   end
 end

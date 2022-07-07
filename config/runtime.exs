@@ -72,13 +72,10 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  # Configure the bridge
-  config :clubhouse, :bridge,
-    url: System.get_env("BRIDGE_URL", "http://bridge"),
-    api_key: ConfigHelpers.require_env("BRIDGE_API_KEY")
-
   # Configure services
   config :clubhouse, :services,
+    bridge_url: System.get_env("BRIDGE_URL", "http://bridge"),
+    bridge_api_key: ConfigHelpers.require_env("BRIDGE_API_KEY"),
     forum_url: ConfigHelpers.require_env("FORUM_URL"),
     mailer_sender: ConfigHelpers.require_env("MAILER_SENDER")
 

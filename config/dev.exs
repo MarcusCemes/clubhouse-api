@@ -75,4 +75,4 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 # Configure the bridge
-config :clubhouse, :bridge, mock: true
+config :clubhouse, :services, mock_bridge: true

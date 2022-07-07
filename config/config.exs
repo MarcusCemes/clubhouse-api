@@ -8,7 +8,8 @@
 import Config
 
 config :clubhouse,
-  ecto_repos: [Clubhouse.Repo]
+  ecto_repos: [Clubhouse.Repo],
+  env: Mix.env()
 
 # Configures the endpoint
 config :clubhouse, ClubhouseWeb.Endpoint,

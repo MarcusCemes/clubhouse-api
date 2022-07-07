@@ -39,8 +39,8 @@ defmodule ClubhouseWeb.UserAuth do
   end
 
   defp mocked_bridge?() do
-    bridge_env = Application.fetch_env!(:clubhouse, :bridge)
-    Keyword.get(bridge_env, :mock) == true
+    bridge_env = Application.fetch_env!(:clubhouse, :services)
+    Keyword.get(bridge_env, :mock_bridge) == true
   end
 
   defp tequila_url() do

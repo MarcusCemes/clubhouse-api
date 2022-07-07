@@ -18,7 +18,7 @@ defmodule Clubhouse.DevHelper do
   end
 
   def init(_) do
-    if Mix.env() in [:dev, :test] do
+    if Application.get_env(:clubhouse, :env) in [:dev, :test] do
       :ets.new(@table, [:set, :public, :named_table])
     end
 
