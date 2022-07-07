@@ -31,4 +31,4 @@ config :logger, level: :warn
 config :phoenix, :plug_init_mode, :runtime
 
 # Use the bridge mock
-config :clubhouse, :bridge, mock: true
+config :clubhouse, :services, mock_bridge: true

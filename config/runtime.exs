@@ -96,4 +96,8 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  config :clubhouse, Clubhouse.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_HOST", "postfix"),
+    port: String.to_integer(System.get_env("SMTP_PORT", "587"))
 end

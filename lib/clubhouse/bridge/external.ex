@@ -36,6 +36,7 @@ defmodule Clubhouse.Bridge.External do
     Tesla.client(middleware)
   end
 
-  defp bridge_url(), do: Application.fetch_env!(:clubhouse, :bridge) |> Keyword.get(:url)
-  defp api_key(), do: Application.fetch_env!(:clubhouse, :bridge) |> Keyword.get(:api_key)
+  defp bridge_url(), do: Keyword.get(services(), :bridge_url)
+  defp api_key(), do: Keyword.get(services(), :bridge_api_key)
+  defp services(), do: Application.fetch_env!(:clubhouse, :services)
 end

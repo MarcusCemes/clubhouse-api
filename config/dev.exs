@@ -74,5 +74,5 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-# Configure the bridge
+# Configure services
 config :clubhouse, :services, mock_bridge: true
