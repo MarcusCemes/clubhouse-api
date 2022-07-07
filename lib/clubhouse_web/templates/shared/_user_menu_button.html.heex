@@ -1,0 +1,16 @@
+<a
+  class="ml-2 inline-flex items-center px-4 py-2 bg-neutral-200 font-semibold rounded-full hover:bg-neutral-300"
+  href={sign_in_out_link(@conn, @type)}
+>
+  <Heroicons.LiveView.icon
+    name={if @type == :sign_in, do: "login", else: "logout"}
+    type="solid"
+    class="mr-2 w-4 h-4"
+  />
+
+  <%= if @type == :sign_in do %>
+    Sign in
+  <% else %>
+    Sign out
+  <% end %>
+</a>

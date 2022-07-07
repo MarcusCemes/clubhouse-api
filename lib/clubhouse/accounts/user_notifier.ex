@@ -3,12 +3,14 @@ defmodule Clubhouse.Accounts.UserNotifier do
 
   alias Clubhouse.Mailer
 
+  @service_name "Clubhouse"
+
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
       new()
       |> to(recipient)
-      |> from({"Clubhouse", "contact@example.com"})
+      |> from({@service_name, from_address()})
       |> subject(subject)
       |> text_body(body)
 
@@ -19,5 +21,10 @@ defmodule Clubhouse.Accounts.UserNotifier do
 
   def deliver_welcome(user, name) do
     deliver(user.email, "Welcome to Clubhouse", "Welcome, #{name}, to Clubhouse!")
+  end
+
+  defp from_address() do
+    Application.fetch_env!(:clubhouse, :services)
+    |> Keyword.get(:mailer_sender)
   end
 end

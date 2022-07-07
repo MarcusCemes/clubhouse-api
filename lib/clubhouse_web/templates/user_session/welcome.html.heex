@@ -1,0 +1,12 @@
+<div class="min-h-screen px-4 flex flex-col justify-center items-center">
+  <p class="text-center">
+    Click
+    <a class="text-cyan-500 font-semibold" href={Routes.user_session_path(@conn, :confirm)}>
+      here
+    </a>
+    to confirm your account. By doing so, you agree to our <a
+      class="text-cyan-500 font-semibold"
+      href={Routes.info_path(@conn, :terms_of_service)}
+    >Terms of Service</a>.
+  </p>
+</div>

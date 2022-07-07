@@ -9,13 +9,12 @@ defmodule ClubhouseWeb.PageView do
     {"Terms", :terms_of_service}
   ]
 
-  @forum_url "https://forum.clubhouse.test"
-
   def links() do
     @links
   end
 
   def forum_url() do
-    @forum_url
+    Application.fetch_env!(:clubhouse, :services)
+    |> Keyword.get(:forum_url)
   end
 end

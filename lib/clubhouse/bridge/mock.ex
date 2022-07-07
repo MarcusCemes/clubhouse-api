@@ -1,21 +1,19 @@
 defmodule Clubhouse.Bridge.Mock do
   @moduledoc """
   An in-memory implementation of the bridge that authenticates
-  a fake user without any network calls.
+  a fake user without any network calls. Stores generated keys
+  in ETS and returns signs-in a fake user.
   """
 
+  @table :dev_helper
   def create_request(_return_url) do
-    setup()
-
     token = Nanoid.generate()
-    :ets.insert(:bridge_mock, {token})
+    :ets.insert(@table, {token})
     {:ok, token}
   end
 
   def fetch_attributes(key, _auth_check) do
-    setup()
-
-    case :ets.take(:bridge_mock, key) do
+    case :ets.take(@table, key) do
       [{^key}] ->
         {:ok,
          %{
@@ -33,12 +31,6 @@ defmodule Clubhouse.Bridge.Mock do
 
       [] ->
         {:error, :bad_key}
-    end
-  end
-
-  defp setup() do
-    if :ets.whereis(:bridge_mock) == :undefined do
-      :ets.new(:bridge_mock, [:set, :public, :named_table])
     end
   end
 end

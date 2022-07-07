@@ -3,49 +3,29 @@ defmodule Clubhouse.Accounts do
   The Accounts context.
   """
 
-  import Ecto.Query, warn: false
-  alias Clubhouse.Repo
+  import Ecto.Query
 
   alias Clubhouse.Accounts.{User, UserToken, UserNotifier}
+  alias Clubhouse.Repo
 
   ## Database getters
 
   @doc """
-  Gets a user by email, returning the User struct or nil.
-
-  ## Examples
-      iex> get_user_by_email("user@epfl.ch")
-      %User{}
-
-      iex> get_user_by_email("unknown_user@epfl.ch")
-      nil
-  """
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
-  end
-
-  @doc """
   Gets a single user.
-
-  Raises `Ecto.NoResultsError` if the User does not exist.
-
-  ## Examples
-
-      iex> get_user!(123)
-      %User{}
-
-      iex> get_user!(456)
-      # Raises Ecto.NoResultsError
   """
   def get_user!(id), do: Repo.get!(User, id)
+
+  @doc """
+  Gets a single user by their email.
+  """
+  def get_user_by_email(email), do: Repo.get_by(User, email: email)
 
   ## User registration
 
   @doc """
-  Registers a user. Only the email is necessary, but all profile
-  attributes are also accepted.
-
-  The username is not cast, as it should be added lazily on-demand.
+  Creates a new user. Only the email is necessary, but most attributes
+  are accepted. The username is not cast, as it should be added
+  lazily on-demand.
 
   ## Examples
 
@@ -56,38 +36,36 @@ defmodule Clubhouse.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_user(attrs) do
+  def create_user(attrs) do
     %User{}
     |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user changes.
-  ## Examples
-
-      iex> change_user_registration(user, %{ email: "new.email@epfl.ch" })
-      %Ecto.Changeset{data: %User{}}
-
+  Update a user's profile, such as their name and SCIPER number.
   """
-  def change_user_registration(%User{} = user, attrs \\ %{}) do
-    User.registration_changeset(user, attrs)
+  def update_user_profile!(user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update!()
   end
 
   ## Session
 
   @doc """
-  Generates a session token.
+  Generate a `session` user token for the given user, inserting it
+  into the database and returning the unique token value.
   """
-  def generate_user_session_token(user) do
+  def generate_user_session_token!(user) do
     user_token = UserToken.build_session_token(user)
     Repo.insert!(user_token)
     user_token.token
   end
 
   @doc """
-  Gets the user with the given session token. Returns the user
-  struct or nil.
+  Returns the user associated with a given `session` user token, or nil
+  if the session token is not valid.
   """
   def get_user_by_session_token(token) do
     query = UserToken.verify_session_token_query(token)
@@ -95,7 +73,7 @@ defmodule Clubhouse.Accounts do
   end
 
   @doc """
-  Deletes a session UserToken based on the token value.
+  Deletes a `session` user token.
   """
   def delete_session_token(token) do
     Repo.delete_all(UserToken.token_and_context_query(token, "session"))
@@ -108,13 +86,34 @@ defmodule Clubhouse.Accounts do
   Delivers the welcome email to the given user.
   """
   def deliver_user_welcome(%User{} = user) do
-    UserNotifier.deliver_welcome(user, extract_name(user))
+    UserNotifier.deliver_welcome(user, user_name(user))
   end
 
-  defp extract_name(%User{first_name: first_name, last_name: last_name})
-       when is_binary(first_name) and is_binary(last_name) do
+  ## Suspension
+
+  def suspend_user(user) do
+    user =
+      user
+      |> User.suspended_changeset(%{suspended: true})
+      |> Repo.update!()
+
+    UserToken
+    |> where(user_id: ^user.id)
+    |> Repo.delete_all()
+
+    ClubhouseWeb.Endpoint.broadcast("user:#{user.id}", "disconnect", %{})
+    user
+  end
+
+  ## Utility
+
+  @doc """
+  Returns the user's full name if available, otherwise their email.
+  """
+  def user_name(%User{first_name: first_name, last_name: last_name})
+      when is_binary(first_name) and is_binary(last_name) do
     "#{first_name} #{last_name}"
   end
 
-  defp extract_name(%User{email: email}), do: email
+  def user_name(%User{email: email}), do: email
 end

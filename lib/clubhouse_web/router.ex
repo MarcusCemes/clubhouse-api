@@ -1,6 +1,8 @@
 defmodule ClubhouseWeb.Router do
   use ClubhouseWeb, :router
 
+  import ClubhouseWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,10 +10,7 @@ defmodule ClubhouseWeb.Router do
     plug :put_root_layout, {ClubhouseWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-  end
-
-  pipeline :api do
-    plug :accepts, ["json"]
+    plug :fetch_current_user
   end
 
   scope "/", ClubhouseWeb do
@@ -24,6 +23,15 @@ defmodule ClubhouseWeb.Router do
     get "/code-of-conduct", InfoController, :code_of_conduct
     get "/privacy", InfoController, :privacy_policy
     get "/terms-of-service", InfoController, :terms_of_service
+
+    scope "/sign-in" do
+      get "/", UserSessionController, :sign_in
+      get "/callback", UserSessionController, :callback
+      get "/confirm", UserSessionController, :confirm
+    end
+
+    get "/welcome", UserSessionController, :welcome
+    get "/sign-out", UserSessionController, :sign_out
   end
 
   # Other scopes may use custom stacks.

@@ -71,4 +71,7 @@ config :phoenix_markdown, :server_tags, :all
 config :ex_heroicons, type: "outline"
 
 # Service configuration
-config :clubhouse, :services, forum_url: "https://forum.clubhouse.test"
+config :clubhouse, :services,
+  forum_url: "https://forum.clubhouse.test",
+  tequila_url: "https://tequila.epfl.ch/cgi-bin/tequila",
+  mailer_sender: "clubhouse@mastermovies.uk"

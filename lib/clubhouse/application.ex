@@ -15,7 +15,9 @@ defmodule Clubhouse.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Clubhouse.PubSub},
       # Start the Endpoint (http/https)
-      ClubhouseWeb.Endpoint
+      ClubhouseWeb.Endpoint,
+      # Global state for development and tests
+      Clubhouse.DevHelper
       # Start a worker by calling: Clubhouse.Worker.start_link(arg)
       # {Clubhouse.Worker, arg}
     ]
