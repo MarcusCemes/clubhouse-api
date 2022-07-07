@@ -1,4 +1,10 @@
 defmodule ClubhouseWeb.UserAuth do
+  @moduledoc """
+  Common authentication logic that can be invoked from different
+  controllers. Most functions take the connection struct and
+  redirect the user as necessary for the action.
+  """
+
   import Plug.Conn
   import Phoenix.Controller
 

@@ -1,4 +1,9 @@
 defmodule Clubhouse.Accounts.UserNotifier do
+  @moduledoc """
+  Handles notifications, such as delivering email to users
+  when they register a new account.
+  """
+
   import Swoosh.Email
 
   alias Clubhouse.Mailer

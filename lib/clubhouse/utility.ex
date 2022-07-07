@@ -1,4 +1,8 @@
 defmodule Clubhouse.Utility do
+  @moduledoc """
+  Generic utility functions that are not specific to a context.
+  """
+
   @doc """
   Wrap a payload with an expiry date. The payload can then be
   unwrapped with `unwrap_payload()`, which returns an :ok tuple

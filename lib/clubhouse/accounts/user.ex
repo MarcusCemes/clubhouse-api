@@ -1,4 +1,8 @@
 defmodule Clubhouse.Accounts.User do
+  @moduledoc """
+  The user entity, storing the user's credentials and profile.
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query

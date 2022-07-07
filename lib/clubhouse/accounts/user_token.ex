@@ -1,4 +1,9 @@
 defmodule Clubhouse.Accounts.UserToken do
+  @moduledoc """
+  A variable user token entity, used to store unique session
+  tokens for example.
+  """
+
   use Ecto.Schema
   import Ecto.Query
   alias Clubhouse.Accounts.UserToken

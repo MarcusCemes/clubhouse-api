@@ -53,7 +53,8 @@ defmodule Clubhouse.MixProject do
       {:nanoid, "~> 2.0"},
       {:phoenix_markdown, "~> 1.0"},
       {:tailwind, "~> 0.1", runtime: Mix.env() == :dev},
-      {:ex_heroicons, "~> 0.6"}
+      {:ex_heroicons, "~> 0.6"},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 
