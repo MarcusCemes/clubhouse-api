@@ -14,7 +14,12 @@ config :clubhouse,
 # Configures the endpoint
 config :clubhouse, ClubhouseWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: ClubhouseWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [
+    view: ClubhouseWeb.ErrorView,
+    accepts: ~w(html json),
+    root_layout: {ClubhouseWeb.LayoutView, "root.html"},
+    layout: {ClubhouseWeb.LayoutView, "error.html"},
+  ],
   pubsub_server: Clubhouse.PubSub,
   live_view: [signing_salt: "vYQeCiSB"]
 
