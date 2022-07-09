@@ -92,7 +92,10 @@ environment.
 | DISCOURSE_SECRET | The shared secret used for SSO token signing **(required)**                 |
 | MAILER_SENDER    | The "from" address when sending mail **(required)**                         |
 | SMTP_HOST        | The hostname of the SMTP server (default: postfix)                          |
-| SMTP_PORT        | THe port of the SMTP server (default: 587)                                  |
+| SMTP_PORT        | The port of the SMTP server (default: 587)                                  |
+| APPEAL_ADDRESS   | Email which users can submit an appeal **(required)**                       |
+| CONTACT_ADDRESS  | Email which users can contact to reach Clubhouse **(required)**             |
+| STATIC_URL       | THe URL for statically hosted resources (external) **(required)**           |
 
 The [config](./config) directory can also be used as a reference to all
 available application configuration.

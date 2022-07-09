@@ -86,12 +86,12 @@ defmodule Clubhouse.Accounts do
   Delivers the welcome email to the given user.
   """
   def deliver_user_welcome(%User{} = user) do
-    UserNotifier.deliver_welcome(user, user_name(user))
+    UserNotifier.deliver_welcome(user)
   end
 
   ## Suspension
 
-  def suspend_user(user) do
+  def suspend_user(user, reason \\ "Unknown") do
     user =
       user
       |> User.suspended_changeset(%{suspended: true})
@@ -102,18 +102,9 @@ defmodule Clubhouse.Accounts do
     |> Repo.delete_all()
 
     ClubhouseWeb.Endpoint.broadcast("user:#{user.id}", "disconnect", %{})
+
+    UserNotifier.deliver_suspension_notice(user, reason)
+
     user
   end
-
-  ## Utility
-
-  @doc """
-  Returns the user's full name if available, otherwise their email.
-  """
-  def user_name(%User{first_name: first_name, last_name: last_name})
-      when is_binary(first_name) and is_binary(last_name) do
-    "#{first_name} #{last_name}"
-  end
-
-  def user_name(%User{email: email}), do: email
 end

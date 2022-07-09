@@ -2,7 +2,7 @@
   <%= if @current_user do %>
     <span class="mr-2 px-4 py-2 inline-flex items-center border rounded-full">
       <Heroicons.LiveView.icon name="user" class="mr-2 w-4 h-4" />
-      <%= @current_user.first_name %> <%= @current_user.last_name %>
+      <%= Clubhouse.Accounts.User.name(@current_user) %>
     </span>
 
     <%= render("_user_menu_button.html", conn: @conn, type: :sign_out) %>

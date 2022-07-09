@@ -18,7 +18,7 @@ config :clubhouse, ClubhouseWeb.Endpoint,
     view: ClubhouseWeb.ErrorView,
     accepts: ~w(html json),
     root_layout: {ClubhouseWeb.LayoutView, "root.html"},
-    layout: {ClubhouseWeb.LayoutView, "error.html"},
+    layout: {ClubhouseWeb.LayoutView, "error.html"}
   ],
   pubsub_server: Clubhouse.PubSub,
   live_view: [signing_salt: "vYQeCiSB"]
@@ -80,4 +80,7 @@ config :ex_heroicons, type: "outline"
 config :clubhouse, :services,
   forum_url: "https://forum.clubhouse.test",
   tequila_url: "https://tequila.epfl.ch/cgi-bin/tequila",
-  mailer_sender: "clubhouse@mastermovies.uk"
+  mailer_sender: "clubhouse@clubhouse.test",
+  appeal_address: "appeal@clubhouse.test",
+  contact_address: "human@clubhouse.test",
+  static_url: "https://static.clubhouse.test"

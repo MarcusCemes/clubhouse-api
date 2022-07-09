@@ -77,7 +77,10 @@ if config_env() == :prod do
     bridge_url: System.get_env("BRIDGE_URL", "http://bridge"),
     bridge_api_key: ConfigHelpers.require_env("BRIDGE_API_KEY"),
     forum_url: ConfigHelpers.require_env("FORUM_URL"),
-    mailer_sender: ConfigHelpers.require_env("MAILER_SENDER")
+    mailer_sender: ConfigHelpers.require_env("MAILER_SENDER"),
+    appeal_address: ConfigHelpers.require_env("APPEAL_ADDRESS"),
+    contact_address: ConfigHelpers.require_env("CONTACT_ADDRESS"),
+    static_url: ConfigHelpers.require_env("STATIC_URL")
 
   # ## Configuring the mailer
   #

@@ -6,29 +6,74 @@ defmodule Clubhouse.Accounts.UserNotifier do
 
   import Swoosh.Email
 
+  import Phoenix.View, only: [render_to_string: 3]
+
+  alias Clubhouse.Accounts.User
   alias Clubhouse.Mailer
+  alias ClubhouseWeb.EmailView
 
   @service_name "Clubhouse"
 
+  def deliver_welcome(user) do
+    user
+    |> bootstrap()
+    |> subject("Welcome to Clubhouse")
+    |> deliver(:welcome)
+  end
+
+  def deliver_suspension_notice(user, reason) do
+    user
+    |> bootstrap()
+    |> subject("Your account has been suspended")
+    |> assign(:reason, reason)
+    |> deliver(:suspended)
+  end
+
+  ## Private functions
+
+  defp bootstrap(user) do
+    name = User.name(user)
+
+    new()
+    |> from({@service_name, service_address()})
+    |> to({User.name(user), user.email})
+    |> assign(:name, name)
+  end
+
   # Delivers the email using the application mailer.
-  defp deliver(recipient, subject, body) do
-    email =
-      new()
-      |> to(recipient)
-      |> from({@service_name, from_address()})
-      |> subject(subject)
-      |> text_body(body)
+  defp deliver(email, template) do
+    email = render_template(email, template)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
   end
 
-  def deliver_welcome(user, name) do
-    deliver(user.email, "Welcome to Clubhouse", "Welcome, #{name}, to Clubhouse!")
+  defp render_template(email, template) do
+    html = render_format(template, "html", email.assigns)
+    text = render_format(template, "text", email.assigns)
+
+    if !html and !text do
+      raise "missing email template"
+    end
+
+    email
+    |> maybe_add_template(html, &html_body/2)
+    |> maybe_add_template(text, &text_body/2)
   end
 
-  defp from_address() do
+  defp maybe_add_template(email, nil, _), do: email
+  defp maybe_add_template(email, rendered, fun), do: fun.(email, rendered)
+
+  defp render_format(template, extension, assigns) do
+    try do
+      render_to_string(EmailView, "#{Atom.to_string(template)}.#{extension}", assigns)
+    rescue
+      Phoenix.Template.UndefinedError -> nil
+    end
+  end
+
+  defp service_address() do
     Application.fetch_env!(:clubhouse, :services)
     |> Keyword.get(:mailer_sender)
   end

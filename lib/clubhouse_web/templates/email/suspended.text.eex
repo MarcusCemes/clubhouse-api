@@ -1,0 +1,13 @@
+Your account has been suspended
+
+Our platform moderators decided to intervene directly, as a result you will no longer be able to sign in to Clubhouse with immediate effect. You may still browse the forum as an anonymous user.
+
+If you would like to make an appeal, please contact us directly at <%= appeal_address() %>. Please note that depending on the severity of the action, we may refuse to lift your suspension.
+
+Reason for your suspension: <%= @reason %>
+
+– A friendly Clubhouse robot 🤖
+
+
+This is an automated notification from Clubhouse.
+If you believe that you receieve this email in error, please let us know and we'll stop bothering you.

@@ -27,6 +27,17 @@ defmodule Clubhouse.Accounts.User do
   end
 
   @doc """
+  Constructs a user's name, using their first and last name
+  if available and defaulting to the email address.
+  """
+  def name(%{first_name: first_name, last_name: last_name})
+      when is_binary(first_name) and is_binary(last_name),
+      do: "#{first_name} #{last_name}"
+
+  # EPFL addresses should be clean, without multiple "@" symbols
+  def name(%{email: email}), do: email |> String.split("@") |> hd()
+
+  @doc """
   A user changeset for registering a new user.
   """
   def registration_changeset(user, attrs) do

@@ -1,11 +1,11 @@
 defmodule ClubhouseWeb.InfoView do
   use ClubhouseWeb, :view
 
-  @contact_email "clubhouse@mastermovies.uk"
   @tos_last_update "28 April 2022"
 
   def contact_email() do
-    @contact_email
+    Application.fetch_env!(:clubhouse, :services)
+    |> Keyword.get(:contact_address)
   end
 
   def website_url() do
