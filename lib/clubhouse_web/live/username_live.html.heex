@@ -1,0 +1,38 @@
+<div class="min-h-screen flex flex-col justify-center items-center">
+  <div class="w-full max-w-xl flex flex-col items-start">
+    <h1 class="text-3xl font-semibold">It's time to choose a username</h1>
+    <p class="mt-2">
+      This will be your unique identifier around the forum, although your full name will be displayed when possible.
+    </p>
+    <.form class="mt-8" let={f} for={@changeset} phx-change="validate" phx-submit="save">
+      <div class="flex items-center">
+        <%= text_input(f, :username,
+          class: "px-4 py-2 rounded-full",
+          id: "user-username",
+          placeholder: "username",
+          "phx-debounce": 250,
+          "phx-hook": "username"
+        ) %>
+
+        <button
+          class="ml-2 px-4 py-2 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-400 disabled:bg-neutral-300 disabled:text-neutral-500"
+          type="submit"
+          disabled={@available != true}
+        >
+          Validate
+        </button>
+      </div>
+
+      <div class="mt-4 h-4 font-bold text-sm">
+        <.availability available={@available} />
+        <span class="text-red-500">
+          <%= error_tag(f, :username) %>
+        </span>
+      </div>
+    </.form>
+
+    <%= if @error do %>
+      <div class="font-bold text-red-500"><%= @error %></div>
+    <% end %>
+  </div>
+</div>

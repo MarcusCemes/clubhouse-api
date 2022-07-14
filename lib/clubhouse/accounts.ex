@@ -7,6 +7,8 @@ defmodule Clubhouse.Accounts do
 
   alias Clubhouse.Accounts.{User, UserToken, UserNotifier}
   alias Clubhouse.Repo
+  alias Clubhouse.Discourse
+  alias ClubhouseWeb.Endpoint
 
   ## Database getters
 
@@ -51,6 +53,16 @@ defmodule Clubhouse.Accounts do
     |> Repo.update!()
   end
 
+  @doc """
+  Check whether the username is already taken by another user.
+  """
+  def username_available?(username) do
+    User
+    |> where(username: ^username)
+    |> Repo.exists?()
+    |> Kernel.not()
+  end
+
   ## Session
 
   @doc """
@@ -91,20 +103,57 @@ defmodule Clubhouse.Accounts do
 
   ## Suspension
 
+  @doc """
+  Invalidates all user sessions and emails them a suspension notice.
+  """
   def suspend_user(user, reason \\ "Unknown") do
-    user =
-      user
-      |> User.suspended_changeset(%{suspended: true})
-      |> Repo.update!()
+    user
+    |> User.suspended_changeset(%{suspended: true})
+    |> Repo.update!()
+    |> invalidate_sessions()
+    |> disconnect_all_live_views()
+    |> UserNotifier.deliver_suspension_notice(reason)
+    |> tap(&Discourse.log_out(&1))
+  end
 
+  @doc """
+  Removes the suspension status and emails them a reinstatement notice.
+  """
+  def reinstate_user(user) do
+    user
+    |> User.suspended_changeset(%{suspended: false})
+    |> Repo.update!()
+    |> UserNotifier.deliver_reinstatement_notice()
+  end
+
+  defp invalidate_sessions(user) do
     UserToken
     |> where(user_id: ^user.id)
-    |> Repo.delete_all()
-
-    ClubhouseWeb.Endpoint.broadcast("user:#{user.id}", "disconnect", %{})
-
-    UserNotifier.deliver_suspension_notice(user, reason)
+    |> Repo.update_all(set: [inserted_at: ~U[1970-01-01 00:00:00Z]])
 
     user
+  end
+
+  defp disconnect_all_live_views(user) do
+    Repo.transaction(
+      fn ->
+        disconnect_all_live_views_stream(user)
+      end,
+      timeout: :infinity
+    )
+
+    user
+  end
+
+  defp disconnect_all_live_views_stream(user) do
+    UserToken
+    |> where(user_id: ^user.id)
+    |> Repo.stream()
+    |> Stream.map(&disconnect_live_view/1)
+    |> Stream.run()
+  end
+
+  defp disconnect_live_view(user_token) do
+    Endpoint.broadcast("users_sessions:#{user_token.token}", "disconnect", %{})
   end
 end

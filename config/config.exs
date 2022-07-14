@@ -53,9 +53,8 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{config_env()}.exs"
+# Tesla HTTP adapter
+config :tesla, adapter: Tesla.Adapter.Hackney
 
 # Tailwind CSS
 config :tailwind,
@@ -79,8 +78,14 @@ config :ex_heroicons, type: "outline"
 # Service configuration
 config :clubhouse, :services,
   forum_url: "https://forum.clubhouse.test",
+  forum_host: "http://discourse",
   tequila_url: "https://tequila.epfl.ch/cgi-bin/tequila",
   mailer_sender: "clubhouse@clubhouse.test",
   appeal_address: "appeal@clubhouse.test",
   contact_address: "human@clubhouse.test",
-  static_url: "https://static.clubhouse.test"
+  static_url: "https://static.clubhouse.test",
+  discourse_secret: "clubhouse-dev"
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{config_env()}.exs"

@@ -4,7 +4,7 @@ defmodule Clubhouse.MixProject do
   def project do
     [
       app: :clubhouse,
-      version: "0.2.0",
+      version: "0.3.0",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:gettext] ++ Mix.compilers(),
@@ -51,6 +51,7 @@ defmodule Clubhouse.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:tesla, "~> 1.4"},
+      {:hackney, "~> 1.17"},
       {:nanoid, "~> 2.0"},
       {:phoenix_markdown, "~> 1.0"},
       {:tailwind, "~> 0.1", runtime: Mix.env() == :dev},

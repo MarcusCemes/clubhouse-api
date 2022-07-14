@@ -1,10 +1,15 @@
 defmodule ClubhouseWeb.UserSessionController do
   use ClubhouseWeb, :controller
 
+  import ClubhouseWeb.UserAuth
+
   alias ClubhouseWeb.UserAuth
 
+  plug :authenticate_user when action in [:sign_in]
+
   def sign_in(conn, params) do
-    UserAuth.initiate_authentication(conn, Map.get(params, "return_path"))
+    to = params["then"] || Routes.page_path(conn, :index)
+    redirect(conn, to: to)
   end
 
   def callback(conn, %{"key" => key, "auth_check" => auth_check}) do
@@ -22,7 +27,7 @@ defmodule ClubhouseWeb.UserSessionController do
   end
 
   def sign_out(conn, params) do
-    return_path = Map.get(params, "return_path")
-    UserAuth.log_out_user(conn, return_path)
+    then = Map.get(params, "then", Routes.page_path(conn, :index))
+    UserAuth.log_out_user(conn, then)
   end
 end

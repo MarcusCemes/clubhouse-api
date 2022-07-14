@@ -10,9 +10,62 @@ defmodule ClubhouseWeb.UserAuth do
 
   alias Clubhouse.Accounts
   alias Clubhouse.Bridge
+  alias Clubhouse.Discourse
   alias ClubhouseWeb.Router.Helpers, as: Routes
 
-  @confirm_attrs_exp_seconds 3600
+  @confirm_attrs_exp_seconds 360
+
+  ## Plugs
+
+  @doc """
+  Plug that will redirect the user to sign-in if the are not
+  authenticated, returning them to the current request URL
+  when complete.
+  """
+  def authenticate_user(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+    else
+      {:ok, key} =
+        conn
+        |> Routes.user_session_url(:callback, then: request_url(conn))
+        |> Bridge.create_request()
+
+      conn
+      |> redirect_to_authenticate(key)
+      |> halt()
+    end
+  end
+
+  defp redirect_to_authenticate(conn, key) do
+    if Bridge.mocked_bridge?() do
+      redirect(conn,
+        to:
+          Routes.user_session_path(conn, :callback,
+            key: key,
+            auth_check: "check",
+            then: request_url(conn)
+          )
+      )
+    else
+      redirect(conn, external: "#{tequila_url()}/requestauth?requestkey=#{key}")
+    end
+  end
+
+  @doc """
+  Plug that will prompt the user to choose a username if needed.
+  """
+  def ensure_username(conn, _opts) do
+    if conn.assigns[:current_user].username do
+      conn
+    else
+      then = request_url(conn)
+      to = Routes.live_path(conn, ClubhouseWeb.UsernameLive, then: then)
+      redirect(conn, to: to)
+    end
+  end
+
+  ## Functions
 
   @doc """
   Start the sign-in flow, requesting a sign-in key from the bridge
@@ -21,31 +74,22 @@ defmodule ClubhouseWeb.UserAuth do
   If the bridge is being mocked, this will redirect to the internal
   completion route.
   """
-  def initiate_authentication(conn, return_path \\ nil) do
-    return_url = Routes.user_session_url(conn, :callback)
+  def initiate_authentication(conn, return_url) do
     {:ok, key} = Bridge.create_request(return_url)
-
-    conn
-    |> put_session(:user_return_to, return_path)
-    |> redirect(external: sign_in_url(conn, key))
+    redirect(conn, external: sign_in_url(key, return_url))
   end
 
-  defp sign_in_url(conn, key) do
-    if mocked_bridge?() do
-      Routes.user_session_url(conn, :callback) <> "?key=#{key}&auth_check"
+  defp sign_in_url(key, return_url) do
+    if Bridge.mocked_bridge?() do
+      return_url <> "?key=#{key}&auth_check"
     else
       tequila_url() <> "/requestauth?requestkey=#{key}"
     end
   end
 
-  defp mocked_bridge?() do
-    bridge_env = Application.fetch_env!(:clubhouse, :services)
-    Keyword.get(bridge_env, :mock_bridge) == true
-  end
-
   defp tequila_url() do
-    services = Application.fetch_env!(:clubhouse, :services)
-    Keyword.get(services, :tequila_url)
+    Application.fetch_env!(:clubhouse, :services)
+    |> Keyword.get(:tequila_url)
   end
 
   @doc """
@@ -57,6 +101,7 @@ defmodule ClubhouseWeb.UserAuth do
     {:ok, attrs} = Bridge.fetch_attributes(key, auth_check)
     parsed_attrs = Bridge.parse_attrs(attrs)
     user = Accounts.get_user_by_email(parsed_attrs.email)
+    then = conn.query_params["then"]
 
     case user do
       nil ->
@@ -65,11 +110,14 @@ defmodule ClubhouseWeb.UserAuth do
 
         conn
         |> put_session(:confirm_attrs, payload)
-        |> redirect(to: Routes.user_session_path(conn, :welcome))
+        |> redirect(to: Routes.user_session_path(conn, :welcome, then: then))
 
       %{suspended: false} ->
         user = Accounts.update_user_profile!(user, parsed_attrs)
-        log_in_user(conn, user)
+
+        conn
+        |> log_in_user(user)
+        |> redirect(external: then)
 
       %{suspended: true} ->
         conn
@@ -77,7 +125,7 @@ defmodule ClubhouseWeb.UserAuth do
           :error,
           "Your account has been suspended, send us an email to make an appeal"
         )
-        |> redirect(to: "/")
+        |> redirect(to: Routes.page_path(conn, :index))
     end
   end
 
@@ -91,12 +139,15 @@ defmodule ClubhouseWeb.UserAuth do
         {:ok, attrs} ->
           {:ok, user} = Accounts.create_user(attrs)
           Accounts.deliver_user_welcome(user)
-          log_in_user(conn, user)
+
+          conn
+          |> log_in_user(user)
+          |> redirect(external: conn.query_params["then"] || Routes.page_path(conn, :index))
 
         {:error, :expired} ->
           conn
           |> put_flash(:error, "Account attributes expired, try again.")
-          |> redirect(to: "/")
+          |> redirect(to: Routes.page_path(conn, :index))
       end
     else
       conn
@@ -119,13 +170,12 @@ defmodule ClubhouseWeb.UserAuth do
   """
   def log_in_user(conn, user) do
     token = Accounts.generate_user_session_token!(user)
-    user_return_to = get_session(conn, :user_return_to)
 
     conn
     |> renew_session()
     |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
-    |> redirect(to: user_return_to || "/")
+    |> put_session(:live_socket_id, "users_sessions:#{token}")
+    |> assign(:current_user, user)
   end
 
   # This function renews the session ID and erases the whole
@@ -147,6 +197,8 @@ defmodule ClubhouseWeb.UserAuth do
     conn
     |> configure_session(renew: true)
     |> clear_session()
+    |> put_session(:return_path, get_session(conn, :return_path))
+    |> put_session(:sso, get_session(conn, :sso))
   end
 
   @doc """
@@ -155,8 +207,13 @@ defmodule ClubhouseWeb.UserAuth do
   It clears all session data for safety. See renew_session.
   """
   def log_out_user(conn, return_path \\ nil) do
-    user_token = get_session(conn, :user_token)
-    user_token && Accounts.delete_session_token(user_token)
+    if user_token = get_session(conn, :user_token) do
+      if user = Accounts.get_user_by_session_token(user_token) do
+        Discourse.log_out(user)
+      end
+
+      Accounts.delete_session_token(user_token)
+    end
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       ClubhouseWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -192,7 +249,7 @@ defmodule ClubhouseWeb.UserAuth do
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: "/")
+      |> redirect(to: Routes.page_path(conn, :index))
       |> halt()
     else
       conn

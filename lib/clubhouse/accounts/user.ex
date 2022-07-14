@@ -108,14 +108,13 @@ defmodule Clubhouse.Accounts.User do
   @doc """
   A user changeset for updating or setting the username.
   """
-  def username_changeset(user, attrs) do
+  def username_changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [:username])
     |> validate_length(:username, min: 4, max: 30, message: "must be between 4 and 30 characters")
     |> validate_format(:username, ~r/^[A-za-z\d_.]+$/,
       message: "must contain only contain letters, numbers, underscores and periods"
     )
-    |> unsafe_validate_unique(:username, Clubhouse.Repo)
     |> unique_constraint(:username)
   end
 

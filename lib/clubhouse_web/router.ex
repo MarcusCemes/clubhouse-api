@@ -32,6 +32,13 @@ defmodule ClubhouseWeb.Router do
 
     get "/welcome", UserSessionController, :welcome
     get "/sign-out", UserSessionController, :sign_out
+    get "/discourse/connect", DiscourseController, :connect
+
+    scope "/" do
+      pipe_through :require_authenticated_user
+
+      live "/choose-username", UsernameLive
+    end
   end
 
   # Other scopes may use custom stacks.

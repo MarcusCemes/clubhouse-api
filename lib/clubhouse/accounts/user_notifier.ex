@@ -29,6 +29,13 @@ defmodule Clubhouse.Accounts.UserNotifier do
     |> deliver(:suspended)
   end
 
+  def deliver_reinstatement_notice(user) do
+    user
+    |> bootstrap()
+    |> subject("You account has been reinstated")
+    |> deliver(:reinstated)
+  end
+
   ## Private functions
 
   defp bootstrap(user) do

@@ -29,4 +29,11 @@ defmodule Clubhouse.Utility do
       _ -> {:error, :expired}
     end
   end
+
+  @doc """
+  Quickly fetch a configuration key from `config :clubhouse, :services`.
+  """
+  def service_env(key) do
+    Application.fetch_env!(:clubhouse, :services) |> Keyword.get(key)
+  end
 end

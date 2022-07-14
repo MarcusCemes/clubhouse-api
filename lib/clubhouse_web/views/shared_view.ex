@@ -14,8 +14,8 @@ defmodule ClubhouseWeb.SharedView do
   end
 
   def sign_in_out_link(conn, action) do
-    return_path = Phoenix.Controller.current_path(conn)
-    Routes.user_session_path(conn, action, return_path: return_path)
+    then = Phoenix.Controller.current_path(conn)
+    Routes.user_session_path(conn, action, then: then)
   end
 
   def flash_messages(conn) do

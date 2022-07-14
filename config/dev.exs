@@ -76,3 +76,6 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Configure services
 config :clubhouse, :services, mock_bridge: true
+
+# Import secret configuration
+import_config "dev.secret.exs"

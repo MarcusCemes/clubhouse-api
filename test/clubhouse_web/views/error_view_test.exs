@@ -11,7 +11,7 @@ defmodule ClubhouseWeb.ErrorViewTest do
   test "renders a generic error" do
     assert render_to_string(ClubhouseWeb.ErrorView, "error.html",
              status: 500,
-             status_text: "Internal Server ERror"
+             status_text: "Internal Server Error"
            ) =~ "Whoops!"
   end
 end

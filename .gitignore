@@ -32,3 +32,5 @@ clubhouse-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Secret configuration files
+**/*.secret.exs

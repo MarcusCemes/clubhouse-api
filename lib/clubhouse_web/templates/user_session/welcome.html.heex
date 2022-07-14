@@ -1,12 +1,47 @@
 <div class="min-h-screen px-4 flex flex-col justify-center items-center">
-  <p class="text-center">
-    Click
-    <a class="text-cyan-500 font-semibold" href={Routes.user_session_path(@conn, :confirm)}>
-      here
-    </a>
-    to confirm your account. By doing so, you agree to our <a
-      class="text-cyan-500 font-semibold"
-      href={Routes.info_path(@conn, :terms_of_service)}
-    >Terms of Service</a>.
-  </p>
+  <div class="w-full max-w-xl">
+    <h1 class="text-4xl font-bold">Welcome to Clubhouse!</h1>
+    <p class="mt-6 font-bold">This is your first time connecting to Clubhouse.</p>
+    <p class="mt-2">
+      In order to use Clubhouse, we need to store some information about you,
+      such as your name and email. We do <strong>not store or have access to
+      your password or any sensitive information</strong>.
+    </p>
+    <p class="mt-2">
+      You can close your account at any time by contacting us by email, any
+      historical data such as forum posts will be anonymised.
+    </p>
+    <p class="mt-6">
+      By clicking "I accept", you agree to our
+      <a
+        class="inline-fle items-center text-cyan-500"
+        href={Routes.info_path(@conn, :privacy_policy)}
+        target="_blank"
+      >
+        <Heroicons.LiveView.icon
+          class="inline relative -top-0.5 w-3.5 h-3.5"
+          name="external-link"
+        /> Privacy Policy
+      </a>
+      and our <a
+        class="inline-fle items-center text-cyan-500"
+        href={Routes.info_path(@conn, :terms_of_service)}
+        target="_blank"
+      >
+      <Heroicons.LiveView.icon
+  class="inline relative -top-0.5 w-3.5 h-3.5"
+  name="external-link"
+/> Terms of Service
+      </a>.
+    </p>
+
+    <div class="mt-4 px-12 flex justify-end">
+      <a
+        class="px-4 py-2 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-400"
+        href={accept_path(@conn)}
+      >
+        I accept
+      </a>
+    </div>
+  </div>
 </div>

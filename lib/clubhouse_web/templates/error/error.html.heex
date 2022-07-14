@@ -11,8 +11,14 @@
   symbols: ☕🍌🔧
 </p>
 
-<div class="mt-4 flex justify-center">
+<div class="mt-4 flex flex-col items-center">
   <code class="text-xs font-bold">
     <%= @status %> <%= @status_text %>
   </code>
+
+  <%= if assigns[:kind] == :error do %>
+    <div class="mt-1 text-xs text-neutral-400">
+      <%= @reason.message %>
+    </div>
+  <% end %>
 </div>

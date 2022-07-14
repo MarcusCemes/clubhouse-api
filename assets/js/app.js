@@ -25,8 +25,14 @@ import topbar from "../vendor/topbar";
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
+
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
+  hooks: {
+    username: {
+      mounted: username_mounted,
+    },
+  },
 });
 
 // Show progress bar on live navigation and form submits
@@ -42,3 +48,23 @@ liveSocket.connect();
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
+
+function username_mounted() {
+  this.el.addEventListener("input", (e) => {
+    this.el.value = sanitizeUsername(this.el.value);
+  });
+}
+
+/**
+ * Synchronously removes invalid characters and converts
+ * certain symbols before the browser has a chance to
+ * repaint to make it seem like the input restricts
+ * characters.
+ */
+function sanitizeUsername(username) {
+  return username
+    .toLowerCase()
+    .replace(/[- ]/, "_")
+    .replace(/[^A-Za-z0-9_.]/, "")
+    .substring(0, 30);
+}
