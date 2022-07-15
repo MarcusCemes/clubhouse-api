@@ -107,13 +107,15 @@ defmodule Clubhouse.Accounts do
   Invalidates all user sessions and emails them a suspension notice.
   """
   def suspend_user(user, reason \\ "Unknown") do
-    user
-    |> User.suspended_changeset(%{suspended: true})
-    |> Repo.update!()
-    |> invalidate_sessions()
-    |> disconnect_all_live_views()
-    |> UserNotifier.deliver_suspension_notice(reason)
-    |> tap(&Discourse.log_out(&1))
+    user =
+      user
+      |> User.suspended_changeset(%{suspended: true})
+      |> Repo.update!()
+
+    invalidate_sessions(user)
+    disconnect_all_live_views(user)
+    UserNotifier.deliver_suspension_notice(user, reason)
+    Discourse.log_out(user)
   end
 
   @doc """
@@ -130,8 +132,6 @@ defmodule Clubhouse.Accounts do
     UserToken
     |> where(user_id: ^user.id)
     |> Repo.update_all(set: [inserted_at: ~U[1970-01-01 00:00:00Z]])
-
-    user
   end
 
   defp disconnect_all_live_views(user) do
@@ -141,8 +141,6 @@ defmodule Clubhouse.Accounts do
       end,
       timeout: :infinity
     )
-
-    user
   end
 
   defp disconnect_all_live_views_stream(user) do
