@@ -10,14 +10,21 @@ defmodule Clubhouse.Accounts.UserNotifier do
 
   alias Clubhouse.Accounts.User
   alias Clubhouse.Mailer
+  alias Clubhouse.Utility
   alias ClubhouseWeb.EmailView
 
+  @formats ~w(html text)
   @service_name "Clubhouse"
 
   def deliver_welcome(user) do
     user
     |> bootstrap()
     |> subject("Welcome to Clubhouse")
+    |> assign(:title, "Welcome to Clubhouse")
+    |> assign(
+      :preheader,
+      "👋 Welcome to Clubhouse, here are some tips on how to get started!"
+    )
     |> deliver(:welcome)
   end
 
@@ -25,6 +32,11 @@ defmodule Clubhouse.Accounts.UserNotifier do
     user
     |> bootstrap()
     |> subject("Your account has been suspended")
+    |> assign(:title, "Account suspended")
+    |> assign(
+      :preheader,
+      "Your account has been suspended with immediate effect. You may make an appeal by contacting us by email."
+    )
     |> assign(:reason, reason)
     |> deliver(:suspended)
   end
@@ -33,6 +45,11 @@ defmodule Clubhouse.Accounts.UserNotifier do
     user
     |> bootstrap()
     |> subject("You account has been reinstated")
+    |> assign(:title, "Your account has been reinstated")
+    |> assign(
+      :preheader,
+      "Your account has been reactivated, we can't wait to see you back at Clubhouse!"
+    )
     |> deliver(:reinstated)
   end
 
@@ -42,7 +59,7 @@ defmodule Clubhouse.Accounts.UserNotifier do
     name = User.name(user)
 
     new()
-    |> from({@service_name, service_address()})
+    |> from({@service_name, Utility.service_env(:mailer_sender)})
     |> to({User.name(user), user.email})
     |> assign(:name, name)
   end
@@ -57,16 +74,20 @@ defmodule Clubhouse.Accounts.UserNotifier do
   end
 
   defp render_template(email, template) do
-    html = render_format(template, "html", email.assigns)
-    text = render_format(template, "text", email.assigns)
-
-    if !html and !text do
-      raise "missing email template"
-    end
+    [html, text] =
+      @formats
+      |> Enum.map(&render_format(template, &1, email.assigns))
+      |> tap(&check_templates!/1)
 
     email
     |> maybe_add_template(html, &html_body/2)
     |> maybe_add_template(text, &text_body/2)
+  end
+
+  defp check_templates!(templates) do
+    if Enum.count(templates, &is_binary/1) == 0 do
+      raise "missing email template"
+    end
   end
 
   defp maybe_add_template(email, nil, _), do: email
@@ -74,14 +95,11 @@ defmodule Clubhouse.Accounts.UserNotifier do
 
   defp render_format(template, extension, assigns) do
     try do
-      render_to_string(EmailView, "#{Atom.to_string(template)}.#{extension}", assigns)
+      template = "#{Atom.to_string(template)}.#{extension}"
+      assigns = Map.put(assigns, :layout, {EmailView, "_layout.#{extension}" |> IO.inspect()})
+      render_to_string(EmailView, template, assigns)
     rescue
       Phoenix.Template.UndefinedError -> nil
     end
-  end
-
-  defp service_address() do
-    Application.fetch_env!(:clubhouse, :services)
-    |> Keyword.get(:mailer_sender)
   end
 end

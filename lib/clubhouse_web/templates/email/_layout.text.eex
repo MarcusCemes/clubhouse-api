@@ -1,0 +1,4 @@
+<%= @inner_content %>
+
+This is an automated notification from Clubhouse.
+If you believe that you receieve this email in error, please let us know and we'll stop bothering you.

@@ -1,4 +1,4 @@
-Hi there, <% @name %>
+Hi there, <%= @name %>,
 
 Welcome to Clubhouse, a student-run unofficial website for EPFL.
 
@@ -14,7 +14,3 @@ Here are some things you can do to get started
 Clubhouse is an experiment, we rely on people like you to give it a boost so that it doesn't fizzle out!
 
 – A friendly Clubhouse robot 🤖
-
-
-This is an automated notification from Clubhouse.
-If you believe that you receieve this email in error, please let us know and we'll stop bothering you.

@@ -7,7 +7,3 @@ If you would like to make an appeal, please contact us directly at <%= appeal_ad
 Reason for your suspension: <%= @reason %>
 
 – A friendly Clubhouse robot 🤖
-
-
-This is an automated notification from Clubhouse.
-If you believe that you receieve this email in error, please let us know and we'll stop bothering you.
