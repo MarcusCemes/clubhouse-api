@@ -85,7 +85,7 @@ defmodule Clubhouse.Accounts.UserNotifier do
   end
 
   defp check_templates!(templates) do
-    if Enum.count(templates, &is_binary/1) == 0 do
+    if not Enum.any?(templates) do
       raise "missing email template"
     end
   end
@@ -96,7 +96,7 @@ defmodule Clubhouse.Accounts.UserNotifier do
   defp render_format(template, extension, assigns) do
     try do
       template = "#{Atom.to_string(template)}.#{extension}"
-      assigns = Map.put(assigns, :layout, {EmailView, "_layout.#{extension}" |> IO.inspect()})
+      assigns = Map.put(assigns, :layout, {EmailView, "_layout.#{extension}"})
       render_to_string(EmailView, template, assigns)
     rescue
       Phoenix.Template.UndefinedError -> nil
