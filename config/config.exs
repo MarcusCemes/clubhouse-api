@@ -86,6 +86,13 @@ config :clubhouse, :services,
   static_url: "https://static.clubhouse.test",
   discourse_secret: "clubhouse-dev"
 
+# Background job processing
+config :clubhouse, Clubhouse.Scheduler,
+  jobs: [
+    # Every day at 03:00
+    {"0 3 * * *", {Clubhouse.Maintenance, :delete_old_sessions, []}}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

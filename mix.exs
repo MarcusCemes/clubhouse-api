@@ -50,6 +50,7 @@ defmodule Clubhouse.MixProject do
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
+      {:quantum, "~> 3.5"},
       {:tesla, "~> 1.4"},
       {:hackney, "~> 1.17"},
       {:nanoid, "~> 2.0"},
