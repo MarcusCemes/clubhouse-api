@@ -5,21 +5,33 @@ defmodule Clubhouse.Bridge.External do
 
   @service "Clubhouse"
 
+  defmodule BridgeError do
+    defexception message: "The bridge is not reachable", plug_status: 503
+  end
+
   def create_request(return_url) do
     payload = %{return_url: return_url, service: @service}
-    %{"key" => key} = make_request("/createRequest", payload)
-    {:ok, key}
+    response = make_request("/createRequest", payload)
+
+    with {:ok, %{"key" => key}} <- response do
+      {:ok, key}
+    end
   end
 
   def fetch_attributes(key, auth_check) do
     payload = %{key: key, auth_check: auth_check}
-    %{"attributes" => attrs} = make_request("/fetchAttributes", payload)
-    {:ok, attrs}
+    response = make_request("/fetchAttributes", payload)
+
+    with {:ok, %{"attributes" => attrs}} <- response do
+      {:ok, attrs}
+    end
   end
 
   defp make_request(path, payload) do
-    {:ok, %Tesla.Env{status: 200, body: body}} = Tesla.post(client(), path, payload)
-    body
+    case Tesla.post(client(), path, payload) do
+      {:ok, %Tesla.Env{status: 200, body: body}} -> {:ok, body}
+      {:error, _} -> raise BridgeError
+    end
   end
 
   defp client() do
@@ -30,7 +42,8 @@ defmodule Clubhouse.Bridge.External do
        [
          {"Authorization", "Bearer #{api_key()}"},
          {"Content-Type", "application/json"}
-       ]}
+       ]},
+      {Tesla.Middleware.Timeout, timeout: 5000}
     ]
 
     Tesla.client(middleware)
