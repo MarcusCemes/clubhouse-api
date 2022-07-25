@@ -16,9 +16,9 @@
     <%= @status %> <%= @status_text %>
   </code>
 
-  <%= if assigns[:kind] == :error do %>
+  <%= if message = extract_message(assigns) do %>
     <div class="mt-1 text-xs text-neutral-400">
-      <%= @reason.message %>
+      <%= message %>
     </div>
   <% end %>
 </div>
