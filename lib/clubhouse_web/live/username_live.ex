@@ -42,7 +42,7 @@ defmodule ClubhouseWeb.UsernameLive do
 
     if changeset.valid? and available? do
       case Repo.update(changeset) do
-        {:ok, _} -> redirect(socket, external: assigns[:then])
+        {:ok, _} -> {:noreply, redirect(socket, external: assigns[:then])}
         {:error, _} -> {:noreply, assign(socket, :error, "An error occurred")}
       end
     else

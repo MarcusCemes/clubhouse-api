@@ -215,4 +215,4 @@ file for details
 Built on the amazing work of the Elixir community.
 
 - [Elixir](https://elixir-lang.org)
-- [Phoenix](https://www.phoenixframework.org),
+- [Phoenix](https://www.phoenixframework.org)
