@@ -34,7 +34,7 @@ config :logger, level: :warn
 config :phoenix, :plug_init_mode, :runtime
 
 # Disable Oban during tests
-config :my_app, Oban, testing: :inline
+config :clubhouse, Oban, testing: :inline
 
 # Use the bridge mock
 config :clubhouse, :services, mock_bridge: true

@@ -16,10 +16,11 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
         ports:
-          - "5432:5432"
+          - 5432:5432
 
     env:
       MIX_ENV: test
+      DATABASE_HOST: localhost
 
     steps:
       - uses: actions/checkout@v3
@@ -27,8 +28,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.13.4"
-          otp-version: "25"
+          elixir-version: 1.13.4
+          otp-version: 25
 
       - name: Cache _build and deps
         uses: actions/cache@v3
