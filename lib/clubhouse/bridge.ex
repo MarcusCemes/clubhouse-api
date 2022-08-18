@@ -3,6 +3,8 @@ defmodule Clubhouse.Bridge do
   Interface for interaction with the Clubhouse Bridge.
   """
 
+  import Clubhouse.Utility, only: [service_env: 1]
+
   @spec create_request(String.t()) :: {:ok, String.t()} | {:error, atom()}
   def create_request(return_url) do
     bridge_impl().create_request(return_url)
@@ -23,22 +25,18 @@ defmodule Clubhouse.Bridge do
       email: "email",
       first_name: "firstname",
       last_name: "name",
-      sciper: "uniqueid"
+      sciper: "uniqueid",
+      unit: "where"
     ]
     |> Enum.map(fn {key, value} -> {key, attrs[value]} end)
     |> Map.new()
   end
 
   defp bridge_impl() do
-    if mocked_bridge?() do
+    if service_env(:mock_bridge) do
       Clubhouse.Bridge.Mock
     else
       Clubhouse.Bridge.External
     end
-  end
-
-  def mocked_bridge?() do
-    Application.fetch_env!(:clubhouse, :services)
-    |> Keyword.get(:mock_bridge) == true
   end
 end

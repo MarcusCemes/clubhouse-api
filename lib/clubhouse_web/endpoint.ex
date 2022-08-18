@@ -16,17 +16,15 @@ defmodule ClubhouseWeb.Endpoint do
   #
   # You should set gzip to true if you are running phx.digest
   # when deploying your static files in production.
-  plug Plug.Static,
-    at: "/",
-    from: :clubhouse,
-    gzip: false,
-    only: ~w(assets fonts images favicon.png robots.txt)
+  # plug Plug.Static,
+  #   at: "/",
+  #   from: :clubhouse,
+  #   gzip: false,
+  #   only: ~w(assets fonts images favicon.png robots.txt)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
-    socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
-    plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :clubhouse
   end
@@ -46,5 +44,12 @@ defmodule ClubhouseWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+
+  plug Corsica,
+    max_age: 86_400,
+    origins: "*",
+    allow_credentials: true,
+    allow_headers: :all
+
   plug ClubhouseWeb.Router
 end

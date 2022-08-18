@@ -1,50 +1,31 @@
 defmodule ClubhouseWeb.Router do
   use ClubhouseWeb, :router
 
-  import ClubhouseWeb.UserAuth
-
   pipeline :browser do
-    plug :accepts, ["html"]
     plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, {ClubhouseWeb.LayoutView, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
-    plug :fetch_current_user
   end
 
-  scope "/", ClubhouseWeb do
-    pipe_through :browser
-
-    get "/", PageController, :index
-
-    get "/about", InfoController, :about
-    get "/frequently-asked-questions", InfoController, :frequently_asked_questions
-    get "/code-of-conduct", InfoController, :code_of_conduct
-    get "/privacy", InfoController, :privacy_policy
-    get "/terms-of-service", InfoController, :terms_of_service
-
-    scope "/sign-in" do
-      get "/", UserSessionController, :sign_in
-      get "/callback", UserSessionController, :callback
-      get "/confirm", UserSessionController, :confirm
-    end
-
-    get "/welcome", UserSessionController, :welcome
-    get "/sign-out", UserSessionController, :sign_out
-    get "/discourse/connect", DiscourseController, :connect
-
-    scope "/" do
-      pipe_through :require_authenticated_user
-
-      live "/choose-username", UsernameLive
-    end
+  pipeline :api do
+    plug :accepts, ["json"]
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ClubhouseWeb do
-  #   pipe_through :api
+  # scope "/", ClubhouseWeb do
+  #   pipe_through :browser
   # end
+
+  scope "/auth", ClubhouseWeb do
+    pipe_through :api
+
+    post "/start", SessionController, :start
+    post "/complete", SessionController, :complete
+    get "/current-user", SessionController, :current_user
+    post "/confirm-account", SessionController, :confirm_account
+    get "/username-availability/:username", SessionController, :check_username
+    post "/choose-username", SessionController, :choose_username
+    post "/discourse/connect", DiscourseController, :connect
+    post "/sign-out", SessionController, :sign_out
+  end
 
   # Enables LiveDashboard only for development
   #

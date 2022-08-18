@@ -12,9 +12,9 @@
           </p>
           <p style="margin: 0 0 20px 0;">
             If you would like to make an appeal, please contact us directly at <a
-              href={"mailto:#{appeal_address()}"}
+              href={"mailto:#{address(:appeal)}"}
               style="text-decoration: underline; color: #666666;"
-            ><%= appeal_address() %></a>. Please note that depending on the severity of the action, we may refuse to lift your suspension.
+            ><%= address(:appeal) %></a>. Please note that depending on the severity of the action, we may refuse to lift your suspension.
           </p>
           <p style="margin: 0;">
             <strong>Reason for your suspension:</strong> <%= @reason %>

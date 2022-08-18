@@ -10,14 +10,17 @@ defmodule Clubhouse.Accounts.User do
   @uid_alphabet "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
   @uid_length 6
 
+  @username_regex ~r/^(?!.*[\._-]{2})[a-zA-Z0-9][a-zA-Z0-9\._-]{2,28}[a-zA-Z0-9]$/
+
   schema "users" do
     field :uid, :string
     field :email, :string
+    field :username, :string
 
     field :first_name, :string
     field :last_name, :string
-    field :username, :string
     field :student_id, :integer
+    field :unit, :string
 
     field :suspended, :boolean, default: false
 
@@ -25,6 +28,18 @@ defmodule Clubhouse.Accounts.User do
 
     timestamps(type: :utc_datetime)
   end
+
+  @type t :: %__MODULE__{
+          id: integer(),
+          uid: String.t(),
+          email: String.t(),
+          username: String.t() | nil,
+          first_name: String.t() | nil,
+          last_name: String.t() | nil,
+          student_id: String.t() | nil,
+          unit: String.t() | nil,
+          suspended: boolean()
+        }
 
   @doc """
   Constructs a user's name, using their first and last name
@@ -42,7 +57,7 @@ defmodule Clubhouse.Accounts.User do
   """
   def registration_changeset(user, attrs) do
     user
-    |> cast(attrs, [:uid, :email, :first_name, :last_name, :student_id])
+    |> cast(attrs, [:uid, :email, :first_name, :last_name, :student_id, :unit])
     |> maybe_add_uid()
     |> validate_uid()
     |> validate_email()
@@ -101,7 +116,7 @@ defmodule Clubhouse.Accounts.User do
   """
   def profile_changeset(user, attrs) do
     user
-    |> cast(attrs, [:first_name, :last_name, :student_id])
+    |> cast(attrs, [:first_name, :last_name, :student_id, :unit])
     |> validate_profile()
   end
 
@@ -111,10 +126,7 @@ defmodule Clubhouse.Accounts.User do
   def username_changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [:username])
-    |> validate_length(:username, min: 4, max: 30, message: "must be between 4 and 30 characters")
-    |> validate_format(:username, ~r/^[A-za-z\d_.]+$/,
-      message: "must contain only contain letters, numbers, underscores and periods"
-    )
+    |> validate_format(:username, @username_regex)
     |> unique_constraint(:username)
   end
 

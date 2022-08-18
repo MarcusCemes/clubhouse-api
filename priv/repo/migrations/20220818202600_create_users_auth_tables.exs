@@ -12,6 +12,7 @@ defmodule Clubhouse.Repo.Migrations.CreateUsersAuthTables do
       add :last_name, :string
       add :username, :string
       add :student_id, :integer
+      add :unit, :string
 
       add :suspended, :boolean, null: false, default: false
 

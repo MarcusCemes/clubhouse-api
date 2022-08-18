@@ -1,9 +1,0 @@
-<div class={
-  "mb-4 px-4 py-2 max-w-2xl flex items-center border font-semibold rounded-full #{toast_colour(@type)}"
-}>
-  <%= if name = toast_icon_name(@type) do %>
-    <Heroicons.LiveView.icon name={name} type="solid" class="w-4 h-4 mr-2" />
-  <% end %>
-
-  <%= @message %>
-</div>

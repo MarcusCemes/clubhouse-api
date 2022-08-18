@@ -7,62 +7,57 @@ defmodule ClubhouseWeb.UserAuth do
 
   import Plug.Conn
   import Phoenix.Controller
+  import Clubhouse.Utility, only: [service_env: 1]
 
   alias Clubhouse.Accounts
+  alias Clubhouse.Accounts.User
   alias Clubhouse.Bridge
-  alias Clubhouse.Discourse
-  alias ClubhouseWeb.Router.Helpers, as: Routes
+  alias Clubhouse.Utility
+  alias ClubhouseWeb.Endpoint
 
-  @confirm_attrs_exp_seconds 360
+  @session_cookie "clubhouse_session"
+  @session_age_secs 2_630_000
+  @token_age_secs 3600
+  @token_namespace "new_user_attrs"
+  @website_callback "/auth/callback"
 
   ## Plugs
 
   @doc """
-  Plug that will redirect the user to sign-in if the are not
-  authenticated, returning them to the current request URL
-  when complete.
+  Plug that will require the user is authenticated, otherwise
+  returning a 401 status code.
   """
-  def authenticate_user(conn, _opts) do
-    if conn.assigns[:current_user] do
-      conn
-    else
-      {:ok, key} =
-        conn
-        |> Routes.user_session_url(:callback, then: request_url(conn))
-        |> Bridge.create_request()
-
-      conn
-      |> redirect_to_authenticate(key)
-      |> halt()
-    end
-  end
-
-  defp redirect_to_authenticate(conn, key) do
-    if Bridge.mocked_bridge?() do
-      redirect(conn,
-        to:
-          Routes.user_session_path(conn, :callback,
-            key: key,
-            auth_check: "check",
-            then: request_url(conn)
-          )
-      )
-    else
-      redirect(conn, external: "#{tequila_url()}/requestauth?requestkey=#{key}")
+  def ensure_authenticated(conn, _opts) do
+    case conn.assigns[:current_user] do
+      %User{} -> conn
+      _ -> halt_unauthenticated(conn)
     end
   end
 
   @doc """
-  Plug that will prompt the user to choose a username if needed.
+  Plug that requires that the user has chosen a username.
   """
-  def ensure_username(conn, _opts) do
-    if conn.assigns[:current_user].username do
-      conn
-    else
-      then = request_url(conn)
-      to = Routes.live_path(conn, ClubhouseWeb.UsernameLive, then: then)
-      redirect(conn, to: to)
+  def ensure_has_username(conn, _opts) do
+    case conn.assigns[:current_user] do
+      %User{username: username} when is_binary(username) -> conn
+      _ -> halt_no_username(conn)
     end
+  end
+
+  defp halt_unauthenticated(conn) do
+    conn
+    |> put_status(:unauthorized)
+    |> put_view(ClubhouseWeb.SessionView)
+    |> render("unauthenticated.json")
+    |> halt()
+  end
+
+  defp halt_no_username(conn) do
+    conn
+    |> put_status(:precondition_required)
+    |> put_view(ClubhouseWeb.SessionView)
+    |> render("no-username.json")
+    |> halt()
   end
 
   ## Functions
@@ -74,22 +69,10 @@ defmodule ClubhouseWeb.UserAuth do
   If the bridge is being mocked, this will redirect to the internal
   completion route.
   """
-  def initiate_authentication(conn, return_url) do
-    {:ok, key} = Bridge.create_request(return_url)
-    redirect(conn, external: sign_in_url(key, return_url))
-  end
-
-  defp sign_in_url(key, return_url) do
-    if Bridge.mocked_bridge?() do
-      return_url <> "?key=#{key}&auth_check"
-    else
-      tequila_url() <> "/requestauth?requestkey=#{key}"
-    end
-  end
-
-  defp tequila_url() do
-    Application.fetch_env!(:clubhouse, :services)
-    |> Keyword.get(:tequila_url)
+  def initiate_authentication(then) do
+    url = service_env(:website_url) <> @website_callback
+    query = URI.encode_query(%{then: then})
+    url |> Utility.append_query_string(query) |> Bridge.create_request()
   end
 
   @doc """
@@ -97,132 +80,116 @@ defmodule ClubhouseWeb.UserAuth do
   profile, generates a session and redirects to the appropriate
   completion endpoint.
   """
+  @spec complete_authentication(Plug.Conn.t(), String.t(), String.t()) ::
+          {:ok, Plug.Conn.t()} | {:error, :suspended | :bad_key} | {:error, :new_user, String.t()}
   def complete_authentication(conn, key, auth_check) do
-    {:ok, attrs} = Bridge.fetch_attributes(key, auth_check)
-    parsed_attrs = Bridge.parse_attrs(attrs)
-    user = Accounts.get_user_by_email(parsed_attrs.email)
-    then = conn.query_params["then"]
+    case Bridge.fetch_attributes(key, auth_check) do
+      {:ok, tequila_attrs} ->
+        attrs = Bridge.parse_attrs(tequila_attrs)
+        user = Accounts.get_user_by_email(attrs.email)
 
-    case user do
-      nil ->
-        exp = DateTime.add(DateTime.utc_now(), @confirm_attrs_exp_seconds, :second)
-        payload = Clubhouse.Utility.wrap_payload(parsed_attrs, exp)
+        case user do
+          %User{suspended: false} ->
+            session_token =
+              user
+              |> Accounts.update_user_profile!(attrs)
+              |> Accounts.generate_user_session_token!()
 
-        conn
-        |> put_session(:confirm_attrs, payload)
-        |> redirect(to: Routes.user_session_path(conn, :welcome, then: then))
+            conn =
+              conn
+              |> set_cookie(@session_cookie, session_token)
+              |> assign(:current_user, user)
 
-      %{suspended: false} ->
-        user = Accounts.update_user_profile!(user, parsed_attrs)
+            {:ok, conn}
 
-        conn
-        |> log_in_user(user)
-        |> redirect(external: then)
+          %{suspended: true} ->
+            {:error, :suspended}
 
-      %{suspended: true} ->
-        conn
-        |> put_flash(
-          :error,
-          "Your account has been suspended, send us an email to make an appeal"
-        )
-        |> redirect(to: Routes.page_path(conn, :index))
+          nil ->
+            {:error, :new_user, encrypt(attrs)}
+        end
+
+      _ ->
+        {:error, :bad_key}
     end
   end
 
+  defp encrypt(data) do
+    Phoenix.Token.encrypt(Endpoint, @token_namespace, data)
+  end
+
   @doc """
-  Finalise the account creation, adding the user to the database
-  and starting a session for the user.
+  Complete the account creation, adding the user to the database,
+  generating the user's first session token.
+
+  ## Examples
+      iex> confirm_account_creation(token)
+      {:ok, %Plug.Conn{}}
+
+
+      iex> confirm_account_creation("an_invalid_token")
+      {:error, :bad_token}
   """
-  def confirm_account_creation(conn) do
-    if attrs = get_session(conn, :confirm_attrs) do
-      case Clubhouse.Utility.unwrap_payload(attrs) do
-        {:ok, attrs} ->
-          {:ok, user} = Accounts.create_user(attrs)
-          Accounts.deliver_user_welcome(user)
+  @spec confirm_account_creation(Plug.Conn.t(), String.t()) ::
+          {:ok, Plug.Conn.t(), User.t()} | {:error, :bad_token} | {:error, :expired}
+  def confirm_account_creation(conn, token) do
+    case decrypt(token) do
+      {:ok, attrs} ->
+        user =
+          case Accounts.create_user(attrs) do
+            {:ok, user} -> user
+            # If the account is already confirmed, Ecto will return {:error, %Changeset{}}
+            {:error, _} -> Accounts.get_user_by_email(attrs[:email])
+          end
 
-          conn
-          |> log_in_user(user)
-          |> redirect(external: conn.query_params["then"] || Routes.page_path(conn, :index))
+        session_token = Accounts.generate_user_session_token!(user)
+        conn = set_cookie(conn, @session_cookie, session_token)
+        {:ok, conn, user}
 
-        {:error, :expired} ->
-          conn
-          |> put_flash(:error, "Account attributes expired, try again.")
-          |> redirect(to: Routes.page_path(conn, :index))
-      end
-    else
-      conn
-      |> put_flash(:error, "You have no pending account creation")
-      |> redirect(to: Routes.page_path(conn, :index))
+      {:error, :invalid} ->
+        {:error, :bad_token}
+
+      {:error, :expired} ->
+        {:error, :expired}
     end
   end
 
-  @doc """
-  Logs the user in.
-
-  It renews the session ID and clears the whole session
-  to avoid fixation attacks. See the renew_session
-  function to customize this behaviour.
-
-  It also sets a `:live_socket_id` key in the session,
-  so LiveView sessions are identified and automatically
-  disconnected on log out. The line can be safely removed
-  if you are not using LiveView.
-  """
-  def log_in_user(conn, user) do
-    token = Accounts.generate_user_session_token!(user)
-
-    conn
-    |> renew_session()
-    |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{token}")
-    |> assign(:current_user, user)
-  end
-
-  # This function renews the session ID and erases the whole
-  # session to avoid fixation attacks. If there is any data
-  # in the session you may want to preserve after log in/log out,
-  # you must explicitly fetch the session data before clearing
-  # and then immediately set it after clearing, for example:
-  #
-  #     defp renew_session(conn) do
-  #       preferred_locale = get_session(conn, :preferred_locale)
-  #
-  #       conn
-  #       |> configure_session(renew: true)
-  #       |> clear_session()
-  #       |> put_session(:preferred_locale, preferred_locale)
-  #     end
-  #
-  defp renew_session(conn) do
-    conn
-    |> configure_session(renew: true)
-    |> clear_session()
-    |> put_session(:return_path, get_session(conn, :return_path))
-    |> put_session(:sso, get_session(conn, :sso))
+  defp decrypt(token) do
+    Phoenix.Token.decrypt(Endpoint, @token_namespace, token, max_age: @token_age_secs)
   end
 
   @doc """
-  Logs the user out.
-
-  It clears all session data for safety. See renew_session.
+  Check whether the username has already been taken by a user.
   """
-  def log_out_user(conn, return_path \\ nil) do
-    if user_token = get_session(conn, :user_token) do
-      if user = Accounts.get_user_by_session_token(user_token) do
-        Discourse.log_out(user)
+  @spec username_available?(String.t()) :: boolean()
+  def username_available?(username) do
+    Accounts.username_available?(username)
+  end
+
+  # Set the user's username if it is nil, a.k.a. has not yet been
+  # chosen, otherwise an error will be returned.
+  @spec choose_username(User.t(), String.t()) ::
+          :ok | {:error, :taken | :already_chosen | :invalid}
+  def choose_username(user, username) do
+    Accounts.choose_username(user, username)
+  end
+
+  @doc """
+  Deletes the session token cookie and database entry.
+  """
+  @spec sign_out(Plug.Conn.t()) :: Plug.Conn.t()
+  def sign_out(conn) do
+    if session_token = conn.cookies[@session_cookie] do
+      if user = Accounts.get_user_by_session_token(session_token) do
+        %{"action" => "sign_out", "id" => user.id}
+        |> Clubhouse.UserWorker.new()
+        |> Oban.insert()
       end
 
-      Accounts.delete_session_token(user_token)
+      Accounts.delete_session_token(session_token)
     end
 
-    if live_socket_id = get_session(conn, :live_socket_id) do
-      ClubhouseWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
-    end
-
-    conn
-    |> renew_session()
-    |> put_flash(:success, "You have been signed out")
-    |> redirect(to: return_path || Routes.page_path(conn, :index))
+    delete_resp_cookie(conn, @session_cookie, session_cookie_opts())
   end
 
   @doc """
@@ -230,52 +197,26 @@ defmodule ClubhouseWeb.UserAuth do
   the `current_user` assign.
   """
   def fetch_current_user(conn, _opts) do
-    {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_by_session_token(user_token)
-    assign(conn, :current_user, user)
-  end
-
-  defp ensure_user_token(conn) do
-    if user_token = get_session(conn, :user_token) do
-      {user_token, conn}
-    else
-      {nil, conn}
-    end
-  end
-
-  @doc """
-  Used for routes that require the user to not be authenticated.
-  """
-  def redirect_if_user_is_authenticated(conn, _opts) do
-    if conn.assigns[:current_user] do
-      conn
-      |> redirect(to: Routes.page_path(conn, :index))
-      |> halt()
+    if token = conn.cookies[@session_cookie] do
+      user = Accounts.get_user_by_session_token(token)
+      assign(conn, :current_user, user)
     else
       conn
     end
   end
 
-  @doc """
-  Used for routes that require the user to be authenticated.
+  defp set_cookie(conn, key, value) do
+    put_resp_cookie(conn, key, value, session_cookie_opts())
+  end
 
-  If you want to enforce the user email is confirmed before
-  they use the application at all, here would be a good place.
-  """
-  def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
-      conn
+  defp session_cookie_opts() do
+    base_opts = [max_age: @session_age_secs, http_only: true]
+
+    if :prod ==
+         Application.fetch_env!(:clubhouse, :env) do
+      [domain: Endpoint.host(), secure: true] ++ base_opts
     else
-      conn
-      |> maybe_store_return_to()
-      |> redirect(to: Routes.user_session_path(conn, :sign_in))
-      |> halt()
+      base_opts
     end
   end
-
-  defp maybe_store_return_to(%{method: "GET"} = conn) do
-    put_session(conn, :user_return_to, current_path(conn))
-  end
-
-  defp maybe_store_return_to(conn), do: conn
 end

@@ -86,7 +86,7 @@ environment.
 | PHX_PORT         | The port to bind the server to (default: 4000)                              |
 | SECRET_KEY_BASE  | Secret value used to derive signing keys **(required)**                     |
 | DATABASE_URL     | The connection string for the production database **(required)**            |
-| BRIDGE_URL       | The URL at which the bridge is accessible on **(required)**                 |
+| BRIDGE_HOST      | The host at which the bridge is accessible on **(required)**                |
 | BRIDGE_API_KEY   | The shared secret used as a Bearer token **(required)**                     |
 | FORUM_URL        | THe URL at which the forum is available **(required)**                      |
 | DISCOURSE_SECRET | The shared secret used for SSO token signing **(required)**                 |

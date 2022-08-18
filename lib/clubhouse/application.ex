@@ -16,8 +16,14 @@ defmodule Clubhouse.Application do
       {Phoenix.PubSub, name: Clubhouse.PubSub},
       # Start the Endpoint (http/https)
       ClubhouseWeb.Endpoint,
-      # Background jobs
-      Clubhouse.Scheduler,
+      # Job processing
+      {Oban, Application.fetch_env!(:clubhouse, Oban)},
+      # HTTP client
+      {Finch,
+       name: FinchClient,
+       pools: %{
+         default: [conn_opts: [transport_opts: [timeout: 5_000]]]
+       }},
       # Global state for development and tests
       Clubhouse.DevHelper
       # Start a worker by calling: Clubhouse.Worker.start_link(arg)

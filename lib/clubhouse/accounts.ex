@@ -25,9 +25,11 @@ defmodule Clubhouse.Accounts do
   ## User registration
 
   @doc """
-  Creates a new user. Only the email is necessary, but most attributes
-  are accepted. The username is not cast, as it should be added
-  lazily on-demand.
+  Creates a new user with the given attributes, storing them in the database
+  and sending them the welcome email.
+
+  Only the email is necessary, but other attributes are accepted as well
+  apart from the username which should be set lazily on-demand.
 
   ## Examples
 
@@ -38,11 +40,16 @@ defmodule Clubhouse.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user(attrs) do
+  @spec create_user(map(), boolean()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def create_user(attrs, send_welcome_email? \\ true) do
     %User{}
     |> User.registration_changeset(attrs)
-    |> Repo.insert(on_conflict: :nothing)
+    |> Repo.insert()
+    |> tap(&maybe_deliver_welcome(&1, send_welcome_email?))
   end
+
+  defp maybe_deliver_welcome({:ok, user}, true), do: deliver_user_welcome(user)
+  defp maybe_deliver_welcome(_, _), do: nil
 
   @doc """
   Update a user's profile, such as their name and SCIPER number.
@@ -62,6 +69,38 @@ defmodule Clubhouse.Accounts do
     |> Repo.exists?()
     |> Kernel.not()
   end
+
+  @doc """
+  Changes the user's username to their desired value if their
+  username is not already set and is not already taken.
+  """
+  @spec(
+    choose_username(User.t(), String.t()) :: :ok,
+    {:error, :invalid | :taken | :already_chosen}
+  )
+  def choose_username(user, username) do
+    Repo.transaction(fn -> set_username_if_nil(user, username) end)
+    |> case do
+      {:ok, result} -> result
+      {:error, :rollback} -> {:error, :taken}
+    end
+  end
+
+  defp set_username_if_nil(user, username) do
+    user = Repo.reload(user)
+
+    if nil == user.username do
+      user
+      |> User.username_changeset(%{username: username})
+      |> Repo.update()
+      |> check_username_was_set()
+    else
+      {:error, :already_chosen}
+    end
+  end
+
+  defp check_username_was_set({:ok, %User{}}), do: :ok
+  defp check_username_was_set({:error, %Ecto.Changeset{}}), do: {:error, :invalid}
 
   ## Session
 

@@ -4,36 +4,21 @@ defmodule Clubhouse.Utility do
   """
 
   @doc """
-  Wrap a payload with an expiry date. The payload can then be
-  unwrapped with `unwrap_payload()`, which returns an :ok tuple
-  or an :error tuple if the expiry date has passed.any()
-
-  This is like a "poor man's JWT", requiring the wrapped payload to
-  be stored somewhere where it cannot be tampered with, such as a signed
-  session cookie.
-  """
-  def wrap_payload(payload, exp) do
-    {DateTime.to_iso8601(exp), payload}
-  end
-
-  @doc """
-  Unwraps the payload, returning an :ok/:error tuple based on
-  whether the expiry date has passed.
-  """
-  def unwrap_payload({exp, payload}) do
-    with {:ok, datetime, _} <- DateTime.from_iso8601(exp),
-         :gt <- DateTime.compare(datetime, DateTime.utc_now()) do
-      {:ok, payload}
-    else
-      {:error, _} -> {:error, :invalid_datetime}
-      _ -> {:error, :expired}
-    end
-  end
-
-  @doc """
   Quickly fetch a configuration key from `config :clubhouse, :services`.
   """
   def service_env(key) do
     Application.fetch_env!(:clubhouse, :services) |> Keyword.get(key)
+  end
+
+  @doc """
+  Appends a query string to a URL, which may already have
+  an existing query string, with the appropriate.
+  """
+  def append_query_string(url, query) do
+    url <> query_string_separator(url) <> query
+  end
+
+  defp query_string_separator(url) do
+    if String.contains?(url, "?"), do: "&", else: "?"
   end
 end

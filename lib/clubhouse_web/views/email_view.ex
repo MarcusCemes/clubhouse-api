@@ -1,14 +1,12 @@
 defmodule ClubhouseWeb.EmailView do
   use ClubhouseWeb, :view
 
-  alias ClubhouseWeb.Endpoint
+  import Clubhouse.Utility, only: [service_env: 1]
 
-  def website_url, do: Routes.page_url(Endpoint, :index)
-  def code_of_conduct_url, do: Routes.info_url(Endpoint, :code_of_conduct)
-  def forum_url, do: Keyword.get(env(), :forum_url)
-  def appeal_address, do: Keyword.get(env(), :appeal_address)
+  def url(:website), do: service_env(:website_url)
+  def url(:code), do: service_env(:website_url) <> "/code-of-conduct"
+  def url(:forum), do: service_env(:forum_url)
+  def url(:static, path), do: service_env(:static_url) <> path
 
-  def static_url(path), do: Keyword.get(env(), :static_url) <> path
-
-  defp env, do: Application.fetch_env!(:clubhouse, :services)
+  def address(:appeal), do: service_env(:appeal_address)
 end

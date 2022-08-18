@@ -8,18 +8,12 @@
 import Config
 
 config :clubhouse,
-  ecto_repos: [Clubhouse.Repo],
-  env: Mix.env()
+  ecto_repos: [Clubhouse.Repo]
 
 # Configures the endpoint
 config :clubhouse, ClubhouseWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [
-    view: ClubhouseWeb.ErrorView,
-    accepts: ~w(html json),
-    root_layout: {ClubhouseWeb.LayoutView, "root.html"},
-    layout: {ClubhouseWeb.LayoutView, "error.html"}
-  ],
+  render_errors: [view: ClubhouseWeb.ErrorView, accepts: ~w(json), layout: false],
   pubsub_server: Clubhouse.PubSub,
   live_view: [signing_salt: "vYQeCiSB"]
 
@@ -35,16 +29,6 @@ config :clubhouse, Clubhouse.Mailer, adapter: Swoosh.Adapters.Local
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
 
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.14.29",
-  default: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
-
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -53,44 +37,28 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Tesla HTTP adapter
-config :tesla, adapter: Tesla.Adapter.Hackney
-
-# Tailwind CSS
-config :tailwind,
-  version: "3.1.4",
-  default: [
-    args: ~w(
-    --config=tailwind.config.js
-    --input=css/app.css
-    --output=../priv/static/assets/app.css
-  ),
-    cd: Path.expand("../assets", __DIR__)
-  ]
-
-# Markdown
-config :phoenix, :template_engines, md: PhoenixMarkdown.Engine
-config :phoenix_markdown, :server_tags, :all
-
-# Hero icons
-config :ex_heroicons, type: "outline"
-
 # Service configuration
 config :clubhouse, :services,
-  forum_url: "https://forum.clubhouse.test",
+  website_url: "http://clubhouse.test",
+  bridge_host: "http://bridge",
+  bridge_api_key: "clubhouse-dev",
   forum_host: "http://discourse",
+  discourse_secret: "clubhouse-dev",
   tequila_url: "https://tequila.epfl.ch/cgi-bin/tequila",
   mailer_sender: "clubhouse@clubhouse.test",
-  appeal_address: "appeal@clubhouse.test",
-  contact_address: "human@clubhouse.test",
-  static_url: "https://static.clubhouse.test",
-  discourse_secret: "clubhouse-dev"
+  static_url: "https://static.clubhouse.test"
 
-# Background job processing
-config :clubhouse, Clubhouse.Scheduler,
-  jobs: [
-    # Every day at 03:00
-    {"0 3 * * *", {Clubhouse.Maintenance, :delete_old_sessions, []}}
+# Job processing
+config :clubhouse, Oban,
+  repo: Clubhouse.Repo,
+  queues: [default: 10],
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       # Every day at 03:00
+       {"0 3 * * *", Clubhouse.MaintenanceWorker}
+     ]}
   ]
 
 # Import environment specific config. This must remain at the bottom

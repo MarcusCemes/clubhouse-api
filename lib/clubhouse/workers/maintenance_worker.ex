@@ -1,21 +1,24 @@
-defmodule Clubhouse.Maintenance do
+defmodule Clubhouse.MaintenanceWorker do
   @moduledoc """
-  Perform upkeep functions, usually executed periodically
-  by the scheduler module.
+  Background worker to perform periodic maintenance.
   """
 
-  import Ecto.Query
+  require Logger
+
+  use Oban.Worker
 
   alias Clubhouse.Accounts.UserToken
   alias Clubhouse.Repo
 
+  import Ecto.Query
   import UserToken, only: [session_validity_in_days: 0]
-  require Logger
 
-  @doc """
-  Deletes old session tokens from the database.
-  """
-  def delete_old_sessions() do
+  @impl Oban.Worker
+  def perform(%Oban.Job{}) do
+    delete_old_sessions()
+  end
+
+  defp delete_old_sessions() do
     {count, _} = Repo.delete_all(old_sessions_query())
     log_info("Deleted #{count} user session tokens")
   end

@@ -1,10 +1,14 @@
 import Config
+import System, only: [get_env: 1, get_env: 2]
+
+# Configure the application environment
+config :clubhouse, env: :dev
 
 # Configure your database
 config :clubhouse, Clubhouse.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: System.get_env("DATABASE_HOST", "localhost"),
+  hostname: get_env("DATABASE_HOST", "postgres"),
   database: "clubhouse_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
@@ -17,17 +21,14 @@ config :clubhouse, Clubhouse.Repo,
 # watchers to your application. For example, we use it
 # with esbuild to bundle .js and .css sources.
 config :clubhouse, ClubhouseWeb.Endpoint,
-  url: [host: "clubhouse.test", port: 443, scheme: "https"],
+  # Binding to loopback ipv4 address prevents access from other machines.
+  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {0, 0, 0, 0}, port: 4000],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
+  debug_errors: false,
   secret_key_base: "AOaJjOrcoQ8dPAkxa3cP/e6GbK0dU8S/i3SCasLEqHP1Y7UiTmSlVHXe2rQSwQ7m",
-  watchers: [
-    # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
-  ]
+  watchers: []
 
 # ## SSL Support
 #
@@ -52,17 +53,6 @@ config :clubhouse, ClubhouseWeb.Endpoint,
 # If desired, both `http:` and `https:` keys can be
 # configured to run both http and https servers on
 # different ports.
-
-# Watch static and templates for browser reloading.
-config :clubhouse, ClubhouseWeb.Endpoint,
-  live_reload: [
-    patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/clubhouse_web/(live|views)/.*(ex)$",
-      ~r"lib/clubhouse_web/templates/.*(eex|md)$"
-    ]
-  ]
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

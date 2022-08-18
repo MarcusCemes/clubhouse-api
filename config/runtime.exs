@@ -21,7 +21,7 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  defmodule ConfigHelpers do
+  defmodule Help do
     def require_env(name) do
       System.get_env(name) ||
         raise """
@@ -74,16 +74,13 @@ if config_env() == :prod do
 
   # Configure services
   config :clubhouse, :services,
-    bridge_url: System.get_env("BRIDGE_URL", "http://bridge"),
-    bridge_api_key: ConfigHelpers.require_env("BRIDGE_API_KEY"),
-    forum_url: ConfigHelpers.require_env("FORUM_URL"),
-    forum_host: ConfigHelpers.require_env("FORUM_HOST"),
-    forum_api_key: ConfigHelpers.require_env("FORUM_API_KEY"),
-    discourse_secret: ConfigHelpers.require_env("DISCOURSE_SECRET"),
-    mailer_sender: ConfigHelpers.require_env("MAILER_SENDER"),
-    appeal_address: ConfigHelpers.require_env("APPEAL_ADDRESS"),
-    contact_address: ConfigHelpers.require_env("CONTACT_ADDRESS"),
-    static_url: ConfigHelpers.require_env("STATIC_URL")
+    website_url: Help.require_env("WEBSITE_URL"),
+    bridge_host: System.get_env("BRIDGE_HOST", "http://bridge"),
+    bridge_api_key: Help.require_env("BRIDGE_API_KEY"),
+    forum_host: Help.require_env("FORUM_HOST"),
+    forum_api_key: Help.require_env("FORUM_API_KEY"),
+    discourse_secret: Help.require_env("DISCOURSE_SECRET"),
+    mailer_sender: Help.require_env("MAILER_SENDER")
 
   # ## Configuring the mailer
   #
@@ -102,8 +99,4 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
-  config :clubhouse, Clubhouse.Mailer,
-    adapter: Swoosh.Adapters.SMTP,
-    relay: System.get_env("SMTP_HOST", "postfix"),
-    port: String.to_integer(System.get_env("SMTP_PORT", "587"))
 end
