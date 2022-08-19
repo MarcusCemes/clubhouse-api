@@ -46,7 +46,8 @@ config :clubhouse, :services,
   discourse_secret: "clubhouse-dev",
   tequila_url: "https://tequila.epfl.ch/cgi-bin/tequila",
   mailer_sender: "clubhouse@clubhouse.test",
-  static_url: "https://static.clubhouse.test"
+  static_url: "https://static.clubhouse.test",
+  appeal_address: "human@clubhouse.test"
 
 # Job processing
 config :clubhouse, Oban,
