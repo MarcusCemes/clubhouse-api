@@ -81,7 +81,9 @@ defmodule ClubhouseWeb.UserAuth do
   completion endpoint.
   """
   @spec complete_authentication(Plug.Conn.t(), String.t(), String.t()) ::
-          {:ok, Plug.Conn.t()} | {:error, :suspended | :bad_key} | {:error, :new_user, String.t()}
+          {:ok, Plug.Conn.t()}
+          | {:error, :suspended | :bad_key | :bridge}
+          | {:error, :new_user, String.t()}
   def complete_authentication(conn, key, auth_check) do
     case Bridge.fetch_attributes(key, auth_check) do
       {:ok, tequila_attrs} ->
@@ -108,6 +110,9 @@ defmodule ClubhouseWeb.UserAuth do
           nil ->
             {:error, :new_user, encrypt(attrs)}
         end
+
+      {:error, :bridge} ->
+        {:error, :bridge}
 
       _ ->
         {:error, :bad_key}
@@ -212,8 +217,7 @@ defmodule ClubhouseWeb.UserAuth do
   defp session_cookie_opts() do
     base_opts = [max_age: @session_age_secs, http_only: true]
 
-    if :prod ==
-         Application.fetch_env!(:clubhouse, :env) do
+    if Application.fetch_env!(:clubhouse, :env) == :prod do
       [domain: Endpoint.host(), secure: true] ++ base_opts
     else
       base_opts

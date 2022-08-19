@@ -74,13 +74,10 @@ defmodule Clubhouse.Accounts do
   Changes the user's username to their desired value if their
   username is not already set and is not already taken.
   """
-  @spec(
-    choose_username(User.t(), String.t()) :: :ok,
-    {:error, :invalid | :taken | :already_chosen}
-  )
+  @spec choose_username(User.t(), String.t()) ::
+          :ok | {:error, :invalid | :taken | :already_chosen}
   def choose_username(user, username) do
-    Repo.transaction(fn -> set_username_if_nil(user, username) end)
-    |> case do
+    case Repo.transaction(fn -> set_username_if_nil(user, username) end) do
       {:ok, result} -> result
       {:error, :rollback} -> {:error, :taken}
     end
@@ -89,7 +86,7 @@ defmodule Clubhouse.Accounts do
   defp set_username_if_nil(user, username) do
     user = Repo.reload(user)
 
-    if nil == user.username do
+    if user.username == nil do
       user
       |> User.username_changeset(%{username: username})
       |> Repo.update()

@@ -22,7 +22,7 @@ defmodule ClubhouseWeb.SessionController do
       {:error, :new_user, token} -> render(conn, "confirm-account.json", token: token)
       {:error, :suspended} -> render(conn, "suspended.json")
       {:error, :bad_key} -> render(conn, "bad-key.json")
-      {:error, _} -> render_unavailable(conn)
+      {:error, :bridge} -> render_unavailable(conn)
     end
   end
 
@@ -43,7 +43,9 @@ defmodule ClubhouseWeb.SessionController do
   end
 
   def choose_username(conn, %{"username" => username}) do
-    case UserAuth.choose_username(conn.assigns[:current_user], username) do
+    conn.assigns[:current_user]
+    |> UserAuth.choose_username(username)
+    |> case do
       :ok -> render(conn, "username-changed.json")
       {:error, :taken} -> render(conn, "username-taken.json")
       {:error, :already_chosen} -> render(conn, "username-chosen.json")
