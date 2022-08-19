@@ -83,7 +83,7 @@ environment.
 | ---------------- | --------------------------------------------------------------------------- |
 | MIX_ENV          | This should be set to `prod` in production                                  |
 | PHX_HOST         | The domain at which the application is accessible at (without the protocol) |
-| PHX_PORT         | The port to bind the server to (default: 4000)                              |
+| PORT             | The port to bind the server to (default: 4000)                              |
 | SECRET_KEY_BASE  | Secret value used to derive signing keys **(required)**                     |
 | DATABASE_URL     | The connection string for the production database **(required)**            |
 | BRIDGE_HOST      | The host at which the bridge is accessible on **(required)**                |
@@ -94,7 +94,6 @@ environment.
 | SMTP_HOST        | The hostname of the SMTP server (default: postfix)                          |
 | SMTP_PORT        | The port of the SMTP server (default: 587)                                  |
 | APPEAL_ADDRESS   | Email which users can submit an appeal **(required)**                       |
-| CONTACT_ADDRESS  | Email which users can contact to reach Clubhouse **(required)**             |
 | STATIC_URL       | THe URL for statically hosted resources (external) **(required)**           |
 
 The [config](./config) directory can also be used as a reference to all

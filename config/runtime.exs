@@ -80,7 +80,9 @@ if config_env() == :prod do
     forum_host: Help.require_env("FORUM_HOST"),
     forum_api_key: Help.require_env("FORUM_API_KEY"),
     discourse_secret: Help.require_env("DISCOURSE_SECRET"),
-    mailer_sender: Help.require_env("MAILER_SENDER")
+    mailer_sender: Help.require_env("MAILER_SENDER"),
+    static_url: Help.require_env("STATIC_URL"),
+    appeal_address: Help.require_env("APPEAL_ADDRESS")
 
   # ## Configuring the mailer
   #
