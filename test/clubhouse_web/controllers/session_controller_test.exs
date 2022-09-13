@@ -68,19 +68,19 @@ defmodule ClubhouseWeb.SessionControllerTest do
     test "signs out", %{conn: conn} do
       conn = post(conn, "/auth/sign-out")
       body = json_response(conn, 200)
+
       assert body == %{"code" => "SIGNED_OUT"}
+      assert %{"clubhouse_session" => %{max_age: 0}} = conn.resp_cookies
     end
   end
 
   defp generate_token(conn) do
     {key, auth_check} = generate_key_auth_check()
 
-    %{"token" => token} =
-      conn
-      |> post("/auth/complete", key: key, auth_check: auth_check)
-      |> json_response(200)
-
-    token
+    conn
+    |> post("/auth/complete", key: key, auth_check: auth_check)
+    |> json_response(200)
+    |> Map.get("token")
   end
 
   defp generate_key_auth_check do

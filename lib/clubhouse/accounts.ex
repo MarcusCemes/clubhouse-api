@@ -8,7 +8,6 @@ defmodule Clubhouse.Accounts do
   alias Clubhouse.Accounts.{User, UserToken, UserNotifier}
   alias Clubhouse.Repo
   alias Clubhouse.Discourse
-  alias ClubhouseWeb.Endpoint
 
   ## Database getters
 
@@ -30,26 +29,21 @@ defmodule Clubhouse.Accounts do
 
   Only the email is necessary, but other attributes are accepted as well
   apart from the username which should be set lazily on-demand.
-
-  ## Examples
-
-      iex> register_user(%{email: email})
-      {:ok, %User{}}
-
-      iex> register_user(%{})
-      {:error, %Ecto.Changeset{}}
-
   """
-  @spec create_user(map(), boolean()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_user(map(), boolean()) :: {:ok, User.t()} | {:error, :exists}
   def create_user(attrs, send_welcome_email? \\ true) do
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
-    |> tap(&maybe_deliver_welcome(&1, send_welcome_email?))
-  end
+    |> case do
+      {:ok, user} ->
+        if send_welcome_email?, do: deliver_user_welcome(user)
+        {:ok, user}
 
-  defp maybe_deliver_welcome({:ok, user}, true), do: deliver_user_welcome(user)
-  defp maybe_deliver_welcome(_, _), do: nil
+      {:error, %Ecto.Changeset{}} ->
+        {:error, :exists}
+    end
+  end
 
   @doc """
   Update a user's profile, such as their name and SCIPER number.
@@ -90,14 +84,14 @@ defmodule Clubhouse.Accounts do
       user
       |> User.username_changeset(%{username: username})
       |> Repo.update()
-      |> check_username_was_set()
+      |> case do
+        {:ok, %User{}} -> :ok
+        {:error, %Ecto.Changeset{}} -> {:error, :invalid}
+      end
     else
       {:error, :already_chosen}
     end
   end
-
-  defp check_username_was_set({:ok, %User{}}), do: :ok
-  defp check_username_was_set({:error, %Ecto.Changeset{}}), do: {:error, :invalid}
 
   ## Session
 
@@ -142,52 +136,40 @@ defmodule Clubhouse.Accounts do
   @doc """
   Invalidates all user sessions and emails them a suspension notice.
   """
-  def suspend_user(user, reason \\ "Unknown") do
-    user =
-      user
-      |> User.suspended_changeset(%{suspended: true})
-      |> Repo.update!()
+  @spec suspend_user(User.t(), String.t(), boolean()) :: User.t()
+  def suspend_user(user, reason \\ "Unknown", deliver_email? \\ true) do
+    user
+    |> User.suspended_changeset(%{suspended: true})
+    |> Repo.update!()
+    |> tap(fn user ->
+      invalidate_sessions(user)
 
-    invalidate_sessions(user)
-    disconnect_all_live_views(user)
-    UserNotifier.deliver_suspension_notice(user, reason)
-    Discourse.log_out(user)
+      if deliver_email? do
+        UserNotifier.deliver_suspension_notice(user, reason)
+      end
+
+      Discourse.log_out(user)
+    end)
   end
 
   @doc """
   Removes the suspension status and emails them a reinstatement notice.
   """
-  def reinstate_user(user) do
+  @spec reinstate_user(User.t(), boolean()) :: User.t()
+  def reinstate_user(user, deliver_email? \\ true) do
     user
     |> User.suspended_changeset(%{suspended: false})
     |> Repo.update!()
-    |> UserNotifier.deliver_reinstatement_notice()
+    |> tap(fn user ->
+      if deliver_email? do
+        UserNotifier.deliver_reinstatement_notice(user)
+      end
+    end)
   end
 
   defp invalidate_sessions(user) do
     UserToken
     |> where(user_id: ^user.id)
     |> Repo.update_all(set: [inserted_at: ~U[1970-01-01 00:00:00Z]])
-  end
-
-  defp disconnect_all_live_views(user) do
-    Repo.transaction(
-      fn ->
-        disconnect_all_live_views_stream(user)
-      end,
-      timeout: :infinity
-    )
-  end
-
-  defp disconnect_all_live_views_stream(user) do
-    UserToken
-    |> where(user_id: ^user.id)
-    |> Repo.stream()
-    |> Stream.map(&disconnect_live_view/1)
-    |> Stream.run()
-  end
-
-  defp disconnect_live_view(user_token) do
-    Endpoint.broadcast("users_sessions:#{user_token.token}", "disconnect", %{})
   end
 end

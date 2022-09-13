@@ -20,23 +20,29 @@ defmodule Clubhouse.Bridge.Mock do
       [{^key}] ->
         :ets.insert(@table, {key})
 
-        {:ok,
-         %{
-           "email" => "fake.person@epfl.ch",
-           "authstrength" => "1",
-           "name" => "Person",
-           "user" => "person",
-           "uniqueid" => "000000",
-           "username" => "person",
-           "group" => "MT-Etudiants,etudiants-epfl",
-           "statut" => "Etudiant",
-           "unit" => "MT-BA6,Section de Microtechnique - Bachelor semestre 6",
-           "firstname" => "Fake",
-           "where" => "MT-BA6/MT-S/ETU/EPFL/CH"
-         }}
+        {:ok, generate_attributes()}
 
       [] ->
         {:error, :bad_key}
     end
+  end
+
+  def generate_attributes(attrs \\ %{}) do
+    Map.merge(
+      %{
+        "email" => "test.user@epfl.ch",
+        "authstrength" => "1",
+        "name" => "User",
+        "user" => "user",
+        "uniqueid" => "000000",
+        "username" => "user",
+        "group" => "MT-Etudiants,etudiants-epfl",
+        "statut" => "Etudiant",
+        "unit" => "MT-BA6,Section de Microtechnique - Bachelor semestre 6",
+        "firstname" => "Test",
+        "where" => "MT-BA6/MT-S/ETU/EPFL/CH"
+      },
+      attrs
+    )
   end
 end

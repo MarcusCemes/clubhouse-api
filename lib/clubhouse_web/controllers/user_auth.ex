@@ -19,7 +19,7 @@ defmodule ClubhouseWeb.UserAuth do
   @session_age_secs 2_630_000
   @token_age_secs 3600
   @token_namespace "new_user_attrs"
-  @website_callback "/auth/callback"
+  @web_callback_path "/auth/callback"
 
   ## Plugs
 
@@ -69,8 +69,9 @@ defmodule ClubhouseWeb.UserAuth do
   If the bridge is being mocked, this will redirect to the internal
   completion route.
   """
+  @spec initiate_authentication(String.t()) :: {:ok, String.t()} | {:error, atom()}
   def initiate_authentication(then) do
-    url = service_env(:website_url) <> @website_callback
+    url = service_env(:website_url) <> @web_callback_path
     query = URI.encode_query(%{then: then})
     url |> Utility.append_query_string(query) |> Bridge.create_request()
   end
@@ -108,7 +109,7 @@ defmodule ClubhouseWeb.UserAuth do
             {:error, :suspended}
 
           nil ->
-            {:error, :new_user, encrypt(attrs)}
+            {:error, :new_user, encrypt_token(attrs)}
         end
 
       {:error, :bridge} ->
@@ -119,7 +120,7 @@ defmodule ClubhouseWeb.UserAuth do
     end
   end
 
-  defp encrypt(data) do
+  def encrypt_token(data) do
     Phoenix.Token.encrypt(Endpoint, @token_namespace, data)
   end
 
@@ -138,7 +139,7 @@ defmodule ClubhouseWeb.UserAuth do
   @spec confirm_account_creation(Plug.Conn.t(), String.t()) ::
           {:ok, Plug.Conn.t(), User.t()} | {:error, :bad_token} | {:error, :expired}
   def confirm_account_creation(conn, token) do
-    case decrypt(token) do
+    case decrypt_token(token) do
       {:ok, attrs} ->
         user =
           case Accounts.create_user(attrs) do
@@ -159,7 +160,7 @@ defmodule ClubhouseWeb.UserAuth do
     end
   end
 
-  defp decrypt(token) do
+  def decrypt_token(token) do
     Phoenix.Token.decrypt(Endpoint, @token_namespace, token, max_age: @token_age_secs)
   end
 
